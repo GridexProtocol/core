@@ -1,0 +1,63 @@
+{
+    "name": "@gridexprotocol/core",
+    "version": "0.1.0",
+    "author": "Gridex Labs",
+    "description": "Core smart contracts for Gridex Protocol",
+    "license": "BUSL-1.1",
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
+    },
+    "homepage": "https://www.gridex.org",
+    "keywords": [
+        "gridex",
+        "core",
+        "gridexswap",
+        "gridexprotocol",
+        "ethereum"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:GridexProtocol/core.git"
+    },
+    "files": [
+        "contracts/**/*.sol",
+        "!contracts/test/*",
+        "artifacts/contracts/**/*.json",
+        "!artifacts/contracts/test/**/*"
+    ],
+    "bugs": {
+        "url": "https://github.com/gridexprotocol/core/issues"
+    },
+    "engines": {
+        "node": ">=10"
+    },
+    "scripts": {
+        "build": "npm run compile",
+        "compile": "hardhat compile",
+        "test": "hardhat test",
+        "coverage": "./coverage.sh"
+    },
+    "devDependencies": {
+        "@nomicfoundation/hardhat-chai-matchers": "^1.0.3",
+        "@nomicfoundation/hardhat-toolbox": "^1.0.2",
+        "@nomiclabs/hardhat-ethers": "^2.1.1",
+        "@nomiclabs/hardhat-etherscan": "^3.1.2",
+        "@nomiclabs/hardhat-solhint": "^2.0.1",
+        "@types/mocha": "^9.1.1",
+        "@types/node": "^18.7.6",
+        "decimal.js": "^10.4.0",
+        "dotenv": "^16.0.1",
+        "ethers": "^5.7.1",
+        "hardhat": "^2.10.2",
+        "hardhat-contract-sizer": "^2.6.1",
+        "hardhat-gas-reporter": "^1.0.8",
+        "mocha-chai-jest-snapshot": "^1.1.4",
+        "prettier": "^2.7.1",
+        "prettier-plugin-solidity": "^1.0.0",
+        "ts-node": "^10.9.1",
+        "typescript": "^4.7.4"
+    },
+    "dependencies": {
+        "@openzeppelin/contracts": "^4.7.3"
+    }
+}

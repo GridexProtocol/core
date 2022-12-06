@@ -1,0 +1,211 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 989314 1`] = `
+Object {
+  "boundary": -527400,
+  "gasUsed": 2154,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 15319379 1`] = `
+Object {
+  "boundary": -500000,
+  "gasUsed": 2182,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 337263108622 1`] = `
+Object {
+  "boundary": -400000,
+  "gasUsed": 2168,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 7425001144658883 1`] = `
+Object {
+  "boundary": -300000,
+  "gasUsed": 2196,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 163464786360687385626 1`] = `
+Object {
+  "boundary": -200000,
+  "gasUsed": 2168,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 3598751819609688046946419 1`] = `
+Object {
+  "boundary": -100000,
+  "gasUsed": 2168,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 79228162514264337593543950336 1`] = `
+Object {
+  "boundary": 0,
+  "gasUsed": 2088,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 1744244129640337381386292603617838 1`] = `
+Object {
+  "boundary": 100000,
+  "gasUsed": 2215,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 38400329974042030913961448288742562464 1`] = `
+Object {
+  "boundary": 200000,
+  "gasUsed": 2215,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 845400776793423922697130608897531771147615 1`] = `
+Object {
+  "boundary": 300000,
+  "gasUsed": 2243,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 18611883644907511909590774894315720731532604461 1`] = `
+Object {
+  "boundary": 400000,
+  "gasUsed": 2215,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryAtPriceX96 priceX96 = 1461300573427867316570072651998408279850435624081 1`] = `
+Object {
+  "boundary": 443635,
+  "gasUsed": 2261,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = -527400, resolution = 1 1`] = `
+Object {
+  "boundaryLower": -527400,
+  "gasUsed": 163,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = 0, resolution = 1 1`] = `
+Object {
+  "boundaryLower": 0,
+  "gasUsed": 163,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = 3, resolution = 1 1`] = `
+Object {
+  "boundaryLower": 3,
+  "gasUsed": 163,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = 3, resolution = 5 1`] = `
+Object {
+  "boundaryLower": 0,
+  "gasUsed": 163,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = 3, resolution = 30 1`] = `
+Object {
+  "boundaryLower": 0,
+  "gasUsed": 163,
+}
+`;
+
+exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = 443635, resolution = 1 1`] = `
+Object {
+  "boundaryLower": 443635,
+  "gasUsed": 163,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = -100000 1`] = `
+Object {
+  "gasUsed": 848,
+  "priceX96": 3598751819609688046946419n,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = -200000 1`] = `
+Object {
+  "gasUsed": 848,
+  "priceX96": 163464786360687385626n,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = -300000 1`] = `
+Object {
+  "gasUsed": 876,
+  "priceX96": 7425001144658883n,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = -400000 1`] = `
+Object {
+  "gasUsed": 848,
+  "priceX96": 337263108622n,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = -500000 1`] = `
+Object {
+  "gasUsed": 862,
+  "priceX96": 15319379n,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = -527400 1`] = `
+Object {
+  "gasUsed": 834,
+  "priceX96": 989314n,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = 0 1`] = `
+Object {
+  "gasUsed": 758,
+  "priceX96": 79228162514264337593543950336n,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = 100000 1`] = `
+Object {
+  "gasUsed": 885,
+  "priceX96": 1744244129640337381386292603617838n,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = 200000 1`] = `
+Object {
+  "gasUsed": 885,
+  "priceX96": 38400329974042030913961448288742562464n,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = 300000 1`] = `
+Object {
+  "gasUsed": 913,
+  "priceX96": 845400776793423922697130608897531771147615n,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = 400000 1`] = `
+Object {
+  "gasUsed": 885,
+  "priceX96": 18611883644907511909590774894315720731532604461n,
+}
+`;
+
+exports[`BoundaryMath #getPriceX96AtBoundary boundary = 443635 1`] = `
+Object {
+  "gasUsed": 931,
+  "priceX96": 1461300573427867316570072651998408279850435624081n,
+}
+`;
