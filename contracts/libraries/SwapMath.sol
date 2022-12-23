@@ -2,15 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "./Uint128Math.sol";
 import "./FixedPointX96.sol";
 import "./FixedPointX192.sol";
 
 library SwapMath {
-    using SafeMath for uint256;
-    using SafeMath for uint160;
     using SafeCast for uint256;
 
     struct ComputeSwapStep {
