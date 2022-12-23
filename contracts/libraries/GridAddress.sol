@@ -16,6 +16,7 @@ library GridAddress {
     /// @dev tokenA and tokenB may be passed in, in the order of either token0/token1 or token1/token0
     /// @param tokenA The contract address of either token0 or token1
     /// @param tokenB The contract address of the other token
+    /// @param resolution The step size in initialized boundaries for a grid created with a given fee
     /// @return key The grid key to compute the canonical address for the grid
     function gridKey(address tokenA, address tokenB, int24 resolution) internal pure returns (GridKey memory key) {
         if (tokenA > tokenB) (tokenA, tokenB) = (tokenB, tokenA);
