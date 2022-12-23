@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.8;
 pragma abicoder v2;
 
 import "@openzeppelin/contracts/utils/Context.sol";
@@ -79,7 +79,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     }
 
     /// @inheritdoc IGrid
-    function syncFee() external returns (int24 _takerFee, int24 _makerFee) {
+    function syncFee() external override returns (int24 _takerFee, int24 _makerFee) {
         (_takerFee, _makerFee) = ITradingConfig(tradingConfig).fees(resolution);
 
         if (_takerFee != takerFee || _makerFee != makerFee) {
@@ -215,14 +215,14 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     }
 
     function _processPlaceOrderReceiveAndCallback(bool zero, uint256 amount, bytes calldata data) private {
-        // tokens to be receive
+        // tokens to be received
         (address tokenToReceive, uint256 amount0, uint256 amount1) = zero
             ? (token0, amount, uint256(0))
             : (token1, uint256(0), amount);
         uint256 balanceBefore = IERC20(tokenToReceive).balanceOf(address(this));
         IGridPlaceMakerOrderCallback(_msgSender()).gridexPlaceMakerOrderCallback(amount0, amount1, data);
         uint256 balanceAfter = IERC20(tokenToReceive).balanceOf(address(this));
-        // G_TPF: token to pay failed
+        // G_TPF: token pay failed
         require(balanceAfter - balanceBefore >= amount, "G_TPF");
     }
 
@@ -243,7 +243,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         // G_PLO: price limit over range
         require(zeroForOne ? priceLimitX96 < slot0Cache.priceX96 : priceLimitX96 > slot0Cache.priceX96, "G_PLO");
 
-        // we locks the grid before swap
+        // we lock the grid before swap
         slot0.unlocked = false;
 
         SwapState memory state = SwapState({
@@ -316,7 +316,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         (amount0, amount1) = _processTransferForSwap(state, recipient, data);
         emit Swap(_msgSender(), recipient, amount0, amount1, state.priceX96, state.boundary);
 
-        // we unlocks the grid after swap
+        // we unlock the grid after swap
         slot0.unlocked = true;
     }
 

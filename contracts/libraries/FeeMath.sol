@@ -2,12 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 library FeeMath {
-    using SafeMath for uint256;
-    using SafeMath for uint160;
     using SafeCast for uint256;
 
     /// @notice Computes the fees

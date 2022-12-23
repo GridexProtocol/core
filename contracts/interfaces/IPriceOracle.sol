@@ -36,6 +36,7 @@ interface IPriceOracle {
 
     /// @notice Returns the price data of the oracle for a given grid and index
     /// @param grid The grid to get the price data of
+    /// @param index The index of the price data to get
     /// @return blockTimestamp The block timestamp of the price data
     /// @return boundaryCumulative The time-cumulative boundary
     /// @return initialized Whether or not the price data is initialized

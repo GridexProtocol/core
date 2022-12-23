@@ -2,15 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "./Uint128Math.sol";
 import "./FixedPointX96.sol";
 import "./FixedPointX192.sol";
 
 library SwapMath {
-    using SafeMath for uint256;
-    using SafeMath for uint160;
     using SafeCast for uint256;
 
     struct ComputeSwapStep {
@@ -24,6 +21,15 @@ library SwapMath {
         uint128 feeAmount;
     }
 
+    /// @notice Computes the swap result with the given parameters
+    /// @param priceCurrentX96 The current price of the grid, as a Q64.96
+    /// @param boundaryPriceX96 The boundary price of boundary. When using token1 to exchange token0,
+    /// it is the price on the right border, otherwise it is the price on the left border, as a Q64.96
+    /// @param priceLimitX96 The price limit of the swap, as a Q64.96
+    /// @param amountRemaining The remaining amount to be swapped in (positive) or swapped out (negative)
+    /// @param makerAmount The remaining amount of token0 or token1 that can be swapped out from the makers
+    /// @param takerFeePips The taker fee, denominated in hundredths of a bip (i.e. 1e-6)
+    /// @return step The result of the swap step
     function computeSwapStep(
         uint160 priceCurrentX96,
         uint160 boundaryPriceX96,
@@ -122,7 +128,7 @@ library SwapMath {
 
             amountOut = numerator / (FixedPointX96.Q_2 + denominator);
         } else {
-            // ((2 * takerAmountIn * (1/priceCurrent) / (2 - (1/priceMax - 1/priceCurrent) * takerAmountIn / makerAmount)) * FixedPointX96.Q
+            // ((2 * takerAmountIn * (1/priceCurrent) / (2 - (1/priceMax - 1/priceCurrent) * takerAmountIn / makerAmount))
             uint256 numerator = 2 * takerAmountInWithoutFee * (FixedPointX192.Q / priceCurrentX96);
 
             uint256 reversePriceDeltaX96 = Math.ceilDiv(
@@ -203,6 +209,12 @@ library SwapMath {
             );
     }
 
+    /// @dev Checks if the price limit is within the range
+    /// @param priceCurrentX96 The current price of the grid, as a Q64.96
+    /// @param boundaryPriceX96 The boundary price of boundary. When using token1 to exchange token0,
+    /// it is the price on the right border, otherwise it is the price on the left border, as a Q64.96
+    /// @param priceLimitX96 The price limit of the swap, as a Q64.96
+    /// @return True if the price limit is within the range
     function _priceInRange(
         uint160 priceCurrentX96,
         uint160 boundaryPriceX96,

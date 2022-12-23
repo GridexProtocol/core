@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.8;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/ITradingConfig.sol";
 
 /// @title The implementation of trading config
 contract TradingConfig is ITradingConfig, Ownable {
-    int24 constant MAX_FEE = 1e6;
     int24 constant ALLOW_MAX_FEE = 1e4;
 
     address public override protocolFeeCollector;

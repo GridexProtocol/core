@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.8;
 
 import "@openzeppelin/contracts/utils/Context.sol";
 import "./interfaces/IGridFactory.sol";
@@ -32,15 +32,16 @@ contract GridFactory is IGridFactory, Context, GridDeployer {
         require(Address.isContract(tokenA), "GF_NC");
         require(Address.isContract(tokenB), "GF_NC");
 
-        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         // GF_TAD: token address must be different
         require(tokenA != tokenB, "GF_TAD");
         // GF_PAE: grid already exists
         require(grids[tokenA][tokenB][resolution] == address(0), "GF_PAE");
+
         (int24 takerFee, ) = ITradingConfig(tradingConfig).fees(resolution);
         // GF_RNE: resolution not enabled
         require(takerFee > 0, "GF_RNE");
 
+        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
         grid = deploy(token0, token1, resolution, tradingConfig, priceOracle, weth9);
         grids[tokenA][tokenB][resolution] = grid;
         grids[tokenB][tokenA][resolution] = grid;
