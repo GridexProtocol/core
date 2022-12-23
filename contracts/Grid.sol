@@ -79,7 +79,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     }
 
     /// @inheritdoc IGrid
-    function syncFee() external returns (int24 _takerFee, int24 _makerFee) {
+    function syncFee() external override returns (int24 _takerFee, int24 _makerFee) {
         (_takerFee, _makerFee) = ITradingConfig(tradingConfig).fees(resolution);
 
         if (_takerFee != takerFee || _makerFee != makerFee) {
