@@ -15,7 +15,7 @@ contract GridDeployer is IGridDeployer {
 
     /// @dev Deploys a grid with desired parameters and clears these parameters after the deployment is complete
     /// @param token0 The first token in the grid, after sorting by address
-    /// @param token1 TThe first token in the grid, after sorting by address
+    /// @param token1 The second token in the grid, after sorting by address
     /// @param resolution The step size in initialized boundaries for a grid created with a given fee
     /// @return grid The address of the deployed grid
     function deploy(

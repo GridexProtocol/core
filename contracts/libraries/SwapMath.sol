@@ -122,7 +122,7 @@ library SwapMath {
 
             amountOut = numerator / (FixedPointX96.Q_2 + denominator);
         } else {
-            // ((2 * takerAmountIn * (1/priceCurrent) / (2 - (1/priceMax - 1/priceCurrent) * takerAmountIn / makerAmount)) * FixedPointX96.Q
+            // ((2 * takerAmountIn * (1/priceCurrent) / (2 - (1/priceMax - 1/priceCurrent) * takerAmountIn / makerAmount))
             uint256 numerator = 2 * takerAmountInWithoutFee * (FixedPointX192.Q / priceCurrentX96);
 
             uint256 reversePriceDeltaX96 = Math.ceilDiv(
