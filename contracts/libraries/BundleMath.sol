@@ -51,6 +51,8 @@ library BundleMath {
     }
 
     /// @notice Maker adds liquidity to the bundle
+    /// @param self The bundle to be updated
+    /// @param makerAmount The amount of token to be added to the bundle
     function addLiquidity(IGridStructs.Bundle storage self, uint128 makerAmount) internal {
         self.makerAmountTotal = self.makerAmountTotal + makerAmount;
         unchecked {
@@ -58,6 +60,11 @@ library BundleMath {
         }
     }
 
+    /// @notice Maker adds liquidity to the bundle
+    /// @param self The bundle to be updated
+    /// @param makerAmountTotal The total amount of token that the maker has added to the bundle
+    /// @param makerAmountRemaining The amount of token that the maker has not yet swapped
+    /// @param makerAmount The amount of token to be added to the bundle
     function addLiquidityWithAmount(
         IGridStructs.Bundle storage self,
         uint128 makerAmountTotal,
@@ -71,8 +78,12 @@ library BundleMath {
     }
 
     /// @notice Maker removes liquidity from the bundle
-    /// @param self The bundle
+    /// @param self The bundle to be updated
     /// @param makerAmountRaw The amount of liquidity added by the maker when placing an order
+    /// @return makerAmountOut The amount of token0 or token1 that the maker will receive
+    /// @return takerAmountOut The amount of token0 or token1 that the maker will receive
+    /// @return takerFeeAmountOut The amount of fees that the maker will receive
+    /// @return makerAmountTotalNew The remaining amount of liquidity added by the maker
     function removeLiquidity(
         IGridStructs.Bundle storage self,
         uint128 makerAmountRaw

@@ -10,18 +10,32 @@ library BoundaryMath {
     /// @dev The maximum value that can be returned from #getPriceX96AtBoundary. Equivalent to getPriceX96AtBoundary(MAX_BOUNDARY)
     uint160 internal constant MAX_RATIO = 1461300573427867316570072651998408279850435624081;
 
+    /// @dev Checks if a boundary is divisible by the resolution
+    /// @param boundary The boundary to check
+    /// @param resolution The step size in initialized boundaries for a grid created with a given fee
+    /// @return isValid Whether or not the boundary is valid
     function isValidBoundary(int24 boundary, int24 resolution) internal pure returns (bool isValid) {
         return boundary % resolution == 0;
     }
 
+    /// @dev Checks if a boundary is within the valid range
+    /// @param boundary The boundary to check
+    /// @return inRange Whether or not the boundary is in range
     function isInRange(int24 boundary) internal pure returns (bool inRange) {
         return boundary >= MIN_BOUNDARY && boundary <= MAX_BOUNDARY;
     }
 
+    /// @dev Checks if a price is within the valid range
+    /// @param priceX96 The price to check, as a Q64.96
+    /// @return inRange Whether or not the price is in range
     function isPriceX96InRange(uint160 priceX96) internal pure returns (bool inRange) {
         return priceX96 >= MIN_RATIO && priceX96 <= MAX_RATIO;
     }
 
+    /// @notice Calculates the price at a given boundary
+    /// @dev priceX96 = pow(1.0001, boundary) * 2**96
+    /// @param boundary The boundary to calculate the price at
+    /// @return priceX96 The price at the boundary, as a Q64.96
     function getPriceX96AtBoundary(int24 boundary) internal pure returns (uint160 priceX96) {
         unchecked {
             uint256 absBoundary = boundary < 0 ? uint256(-int256(boundary)) : uint256(int256(boundary));
@@ -54,11 +68,14 @@ library BoundaryMath {
             // this divides by 1<<32 and rounds up to go from a Q128.128 to a Q128.96.
             // due to out boundary input limitations, we then proceed to downcast as the
             // result will always fit within 160 bits.
-            // we round up in the division so that getBoundaryAtSqrtRatio of the output price is always consistent
+            // we round up in the division so that getBoundaryAtPriceX96 of the output price is always consistent
             priceX96 = uint160((ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1));
         }
     }
 
+    /// @notice Calculates the boundary at a given price
+    /// @param priceX96 The price to calculate the boundary at, as a Q64.96
+    /// @return boundary The boundary at the price
     function getBoundaryAtPriceX96(uint160 priceX96) internal pure returns (int24 boundary) {
         unchecked {
             uint256 ratio = uint256(priceX96) << 32;
@@ -208,7 +225,10 @@ library BoundaryMath {
     }
 
     /// @dev Returns the lower boundary for the given boundary and resolution.
-    /// The lower boundary may not be valid (if out of the boundary range).
+    /// The lower boundary may not be valid (if out of the boundary range)
+    /// @param boundary The boundary to get the lower boundary for
+    /// @param resolution The step size in initialized boundaries for a grid created with a given fee
+    /// @return boundaryLower The lower boundary for the given boundary and resolution
     function getBoundaryLowerAtBoundary(int24 boundary, int24 resolution) internal pure returns (int24 boundaryLower) {
         unchecked {
             int24 remainder = boundary % resolution;
@@ -218,6 +238,9 @@ library BoundaryMath {
     }
 
     /// @dev Rewrite the lower boundary that is not in the range to a valid value
+    /// @param boundaryLower The lower boundary to rewrite
+    /// @param resolution The step size in initialized boundaries for a grid created with a given fee
+    /// @return validBoundaryLower The valid lower boundary
     function rewriteToValidBoundaryLower(
         int24 boundaryLower,
         int24 resolution

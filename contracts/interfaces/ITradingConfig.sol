@@ -15,6 +15,10 @@ interface ITradingConfig {
     /// @param newMakerFee The new maker fee, denominated in hundredths of a bip (i.e. 1e-6)
     event ResolutionUpdated(int24 indexed resolution, int24 indexed newTakerFee, int24 indexed newMakerFee);
 
+    /// @notice Emitted when a new collector is set via the trading config
+    /// @param sender The address of the sender
+    /// @param oldCollector Address of the old protocol fee collector
+    /// @param newCollector Address of the new protocol fee collector
     event ProtocolFeeCollectorTransferred(
         address indexed sender,
         address indexed oldCollector,

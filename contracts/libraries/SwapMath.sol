@@ -21,6 +21,15 @@ library SwapMath {
         uint128 feeAmount;
     }
 
+    /// @notice Computes the swap result with the given parameters
+    /// @param priceCurrentX96 The current price of the grid, as a Q64.96
+    /// @param boundaryPriceX96 The boundary price of boundary. When using token1 to exchange token0,
+    /// it is the price on the right border, otherwise it is the price on the left border, as a Q64.96
+    /// @param priceLimitX96 The price limit of the swap, as a Q64.96
+    /// @param amountRemaining The remaining amount to be swapped in (positive) or swapped out (negative)
+    /// @param makerAmount The remaining amount of token0 or token1 that can be swapped out from the makers
+    /// @param takerFeePips The taker fee, denominated in hundredths of a bip (i.e. 1e-6)
+    /// @return step The result of the swap step
     function computeSwapStep(
         uint160 priceCurrentX96,
         uint160 boundaryPriceX96,
@@ -200,6 +209,12 @@ library SwapMath {
             );
     }
 
+    /// @dev Checks if the price limit is within the range
+    /// @param priceCurrentX96 The current price of the grid, as a Q64.96
+    /// @param boundaryPriceX96 The boundary price of boundary. When using token1 to exchange token0,
+    /// it is the price on the right border, otherwise it is the price on the left border, as a Q64.96
+    /// @param priceLimitX96 The price limit of the swap, as a Q64.96
+    /// @return True if the price limit is within the range
     function _priceInRange(
         uint160 priceCurrentX96,
         uint160 boundaryPriceX96,
