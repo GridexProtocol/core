@@ -32,6 +32,7 @@ library BoundaryBitmap {
     /// @param priceX96 Price of the initial boundary, as a Q64.96
     /// @param currentBoundaryInitialized Whether the starting boundary is initialized or not
     /// @param resolution The step size in initialized boundaries for a grid created with a given fee
+    /// @param boundaryLower The starting lower boundary of the grid
     /// @param lte Whether or not to search for the next initialized boundary
     /// to the left (less than or equal to the starting boundary)
     /// @return next The next boundary, regardless of initialization state
