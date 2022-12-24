@@ -10,7 +10,7 @@ library BoundaryMath {
     /// @dev The maximum value that can be returned from #getPriceX96AtBoundary. Equivalent to getPriceX96AtBoundary(MAX_BOUNDARY)
     uint160 internal constant MAX_RATIO = 1461300573427867316570072651998408279850435624081;
 
-    /// @dev Checks if a boundary is divisible by the resolution
+    /// @dev Checks if a boundary is divisible by a resolution
     /// @param boundary The boundary to check
     /// @param resolution The step size in initialized boundaries for a grid created with a given fee
     /// @return isValid Whether or not the boundary is valid
