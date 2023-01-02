@@ -66,6 +66,10 @@ interface IGrid {
     /// @notice The amounts of token0 and token1 that are owed to the protocol
     function protocolFees() external view returns (uint128 token0, uint128 token1);
 
+    /// @notice The amounts of token0 and token1 that are owed to the channel
+    /// @param channel The address of channel
+    function channelFees(address channel) external view returns (uint128 token0, uint128 token1);
+
     /// @notice Returns the information of a given bundle
     /// @param bundleId The unique identifier of the bundle
     /// @return boundaryLower The lower boundary of the bundle
@@ -111,6 +115,7 @@ interface IGrid {
     /// @notice Swaps token0 for token1, or vice versa
     /// @dev The caller of this method receives a callback in the form of IGridSwapCallback#gridexSwapCallback
     /// @param recipient The address to receive the output of the swap
+    /// @param channel The address to receive the channel fee
     /// @param zeroForOne The swap direction, true for token0 to token1 and false otherwise
     /// @param amountSpecified The amount of the swap, configured as an exactInput (positive)
     /// or an exactOutput (negative)
@@ -123,6 +128,7 @@ interface IGrid {
     /// by the exact amount. When positive, it will increase by at least this amount.
     function swap(
         address recipient,
+        address channel,
         bool zeroForOne,
         int256 amountSpecified,
         uint160 priceLimitX96,
@@ -181,6 +187,7 @@ interface IGrid {
     function flash(address recipient, uint256 amount0, uint256 amount1, bytes calldata data) external;
 
     /// @notice Collects tokens owed
+    /// @param recipient The address to receive the collected fees
     /// @param amount0Requested The maximum amount of token0 to send.
     /// Set to 0 if fees should only be collected in token1.
     /// @param amount1Requested The maximum amount of token1 to send.
@@ -201,6 +208,20 @@ interface IGrid {
     /// @return amount0 The amount of protocol fees collected in token0
     /// @return amount1 The amount of protocol fees collected in token1
     function collectProtocolFees(
+        uint128 amount0Requested,
+        uint128 amount1Requested
+    ) external returns (uint128 amount0, uint128 amount1);
+
+    /// @notice Collects the channel fee accrued to the grid
+    /// @param recipient The address to receive the collected fees
+    /// @param amount0Requested The maximum amount of token0 to send.
+    /// Set to 0 if fees should only be collected in token1.
+    /// @param amount1Requested The maximum amount of token1 to send.
+    /// Set to 0 if fees should only be collected in token0.
+    /// @return amount0 The amount of channel fees collected in token0
+    /// @return amount1 The amount of channel fees collected in token1
+    function collectChannelFees(
+        address recipient,
         uint128 amount0Requested,
         uint128 amount1Requested
     ) external returns (uint128 amount0, uint128 amount1);

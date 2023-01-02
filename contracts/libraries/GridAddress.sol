@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/Create2.sol";
 
 library GridAddress {
-    bytes32 internal constant GRID_BYTES_CODE_HASH = 0x001cb77bc804776481969069349ef7d5601969e736799648cd0329d129a8c6b4;
+    bytes32 internal constant GRID_BYTES_CODE_HASH = 0x271a3a7e587bf7ffb70fd27088dd348beedb094fd3fe6204c16fabfde1ea67d4;
 
     struct GridKey {
         address token0;

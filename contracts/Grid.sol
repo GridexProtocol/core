@@ -42,6 +42,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
 
     Slot0 public override slot0;
     TokensOwed public override protocolFees;
+    mapping(address => TokensOwed) public override channelFees;
 
     int24 public override takerFee;
     int24 public override makerFee;
@@ -229,6 +230,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     /// @inheritdoc IGrid
     function swap(
         address recipient,
+        address channel,
         bool zeroForOne,
         int256 amountSpecified,
         uint160 priceLimitX96,
@@ -308,9 +310,15 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         // updates fee protocol
         // In the interest of gas-efficiency, overflow is permitted here, requiring us to
         // only collect the protocol fee prior to overflow
+        uint128 feeChannel = Math.mulDiv(state.feeProtocol, 7, 10).toUint128();
         unchecked {
-            if (state.zeroForOne) protocolFees.token0 = protocolFees.token0 + state.feeProtocol;
-            else protocolFees.token1 = protocolFees.token1 + state.feeProtocol;
+            if (state.zeroForOne) {
+                channelFees[channel].token0 = channelFees[channel].token0 + feeChannel;
+                protocolFees.token0 = protocolFees.token0 + (state.feeProtocol - feeChannel);
+            } else {
+                channelFees[channel].token1 = channelFees[channel].token1 + feeChannel;
+                protocolFees.token1 = protocolFees.token1 + (state.feeProtocol - feeChannel);
+            }
         }
 
         (amount0, amount1) = _processTransferForSwap(state, recipient, data);
@@ -654,6 +662,17 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         (amount0, amount1) = _collectOwed(protocolFees, collector, amount0Requested, amount1Requested);
 
         emit CollectFeeProtocol(_msgSender(), collector, amount0, amount1);
+    }
+
+    /// @inheritdoc IGrid
+    function collectChannelFees(
+        address recipient,
+        uint128 amount0Requested,
+        uint128 amount1Requested
+    ) external override lock returns (uint128 amount0, uint128 amount1) {
+        (amount0, amount1) = _collectOwed(channelFees[_msgSender()], recipient, amount0Requested, amount1Requested);
+
+        emit CollectFeeChannel(_msgSender(), recipient, amount0, amount1);
     }
 
     function _collectOwed(
