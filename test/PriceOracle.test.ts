@@ -122,6 +122,7 @@ describe("Oracle", () => {
             amountOut: 10n ** 18n * 500n,
             amountInMaximum: 10n ** 18n * 10000n,
             priceLimitX96: 0n,
+            channel: (await ethers.getSigners())[0].address,
         });
     }
 
