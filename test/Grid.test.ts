@@ -2122,6 +2122,21 @@ describe("Grid", () => {
         });
     });
 
+    describe("#collectChannelFees", () => {
+        it("should revert with right error if not initialized", async () => {
+            const {otherAccount, grid} = await deployAndCreateGridFixture();
+            await expect(grid.collectChannelFees(otherAccount.address, 0, 0)).to.be.revertedWith("G_GL");
+        });
+
+        it("event should be emitted", async () => {
+            const {signer, otherAccount, grid} = await deployAndCreateGridFixture();
+            await grid.initialize(RESOLUTION_X96);
+            await expect(grid.collectChannelFees(otherAccount.address, 0, 0))
+                .to.emit(grid, "CollectFeeChannel")
+                .withArgs(signer.address, otherAccount.address, 0n, 0n);
+        });
+    });
+
     describe("#placeMakerOrder", () => {
         it("should revert with right error if not initialized", async () => {
             const {gridFactory, weth, gridTestHelper} = await loadFixture(createGridAndInitializeGridFixture);
