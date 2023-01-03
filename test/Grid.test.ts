@@ -2122,27 +2122,6 @@ describe("Grid", () => {
         });
     });
 
-    describe("#syncFee", () => {
-        it("should not affect fee if not changed", async () => {
-            const {grid} = await loadFixture(createGridAndInitializeGridFixture);
-            const takerFee = await grid.takerFee();
-            const makerFee = await grid.makerFee();
-            await grid.syncFee();
-            expect(await grid.takerFee()).to.equal(takerFee);
-            expect(await grid.makerFee()).to.equal(makerFee);
-        });
-
-        it("should update fee if changed", async () => {
-            const {grid, gridFactory} = await loadFixture(createGridAndInitializeGridFixture);
-            const tradingConfig = await ethers.getContractAt("ITradingConfig", await gridFactory.tradingConfig());
-            await tradingConfig.updateResolution(Resolution.MEDIUM, 10, -10);
-
-            await grid.syncFee();
-            expect(await grid.takerFee()).to.equal(10);
-            expect(await grid.makerFee()).to.equal(-10);
-        });
-    });
-
     describe("#placeMakerOrder", () => {
         it("should revert with right error if not initialized", async () => {
             const {gridFactory, weth, gridTestHelper} = await loadFixture(createGridAndInitializeGridFixture);

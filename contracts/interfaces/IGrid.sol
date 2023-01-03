@@ -101,12 +101,6 @@ interface IGrid {
 
     ///==================================== Grid Actions ====================================
 
-    /// @notice Sync the new taker fee and maker fee
-    /// @dev Every one can call this function
-    /// @return takerFee The new taker fee
-    /// @return makerFee The new maker fee
-    function syncFee() external returns (int24 takerFee, int24 makerFee);
-
     /// @notice Sets the initial price for the grid
     /// @dev Price is represented as an amountToken1/amountToken0 Q64.96 value
     /// @param priceX96 The initial price of the grid, as a Q64.96

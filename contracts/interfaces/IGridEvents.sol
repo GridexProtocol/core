@@ -5,12 +5,6 @@ import "./IGridStructs.sol";
 
 /// @title Events emitted by the grid contract
 interface IGridEvents {
-    /// @notice Emitted when the fee rate is updated
-    /// @param sender The address that initiated the change fee call
-    /// @param newTakerFee The new taker fee, denominated in hundredths of a bip (i.e. 1e-6)
-    /// @param newMakerFee The new maker fee, denominated in hundredths of a bip (i.e. 1e-6)
-    event ChangeFee(address indexed sender, int24 newTakerFee, int24 newMakerFee);
-
     /// @notice Emitted exactly once by a grid when #initialize is first called on the grid
     /// @param priceX96 The initial price of the grid, as a Q64.96
     /// @param boundary The initial boundary of the grid

@@ -53,10 +53,6 @@ interface IGridParameters {
         uint160 initializedBoundaryUpperPriceX96;
         /// @dev The protocol fee that the taker needs to pay
         uint128 feeProtocol;
-        /// @dev The fee pips of the taker
-        int24 takerFeePips;
-        /// @dev The fee pips of the maker
-        int24 makerFeePips;
         bool stopSwap;
     }
 

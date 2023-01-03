@@ -40,12 +40,12 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     address private immutable tradingConfig;
     address private immutable priceOracle;
 
+    int24 public immutable takerFee;
+    int24 public immutable makerFee;
+
     Slot0 public override slot0;
     TokensOwed public override protocolFees;
     mapping(address => TokensOwed) public override channelFees;
-
-    int24 public override takerFee;
-    int24 public override makerFee;
 
     mapping(int24 => Boundary) public override boundaries0;
     mapping(int24 => Boundary) public override boundaries1;
@@ -67,8 +67,6 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         (token0, token1, resolution, tradingConfig, priceOracle, weth9) = IGridDeployer(_msgSender()).parameters();
 
         (takerFee, makerFee) = ITradingConfig(tradingConfig).fees(resolution);
-
-        emit ChangeFee(_msgSender(), takerFee, makerFee);
     }
 
     modifier lock() {
@@ -77,16 +75,6 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         slot0.unlocked = false;
         _;
         slot0.unlocked = true;
-    }
-
-    /// @inheritdoc IGrid
-    function syncFee() external override returns (int24 _takerFee, int24 _makerFee) {
-        (_takerFee, _makerFee) = ITradingConfig(tradingConfig).fees(resolution);
-
-        if (_takerFee != takerFee || _makerFee != makerFee) {
-            (takerFee, makerFee) = (_takerFee, _makerFee);
-            emit ChangeFee(_msgSender(), _takerFee, _makerFee);
-        }
     }
 
     /// @inheritdoc IGrid
@@ -261,8 +249,6 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             initializedBoundaryLowerPriceX96: 0,
             initializedBoundaryUpperPriceX96: 0,
             feeProtocol: 0,
-            takerFeePips: takerFee,
-            makerFeePips: makerFee,
             stopSwap: false
         });
 
@@ -379,7 +365,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             state.priceLimitX96,
             state.amountSpecifiedRemaining,
             boundary.makerAmountRemaining,
-            state.takerFeePips
+            takerFee
         );
         // when the amount of swapped out tokens is 0, swapping stops
         if (step.amountOut == 0) return true;
@@ -395,8 +381,8 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         // calculates maker and protocol fees
         (uint128 takerFeeForMakerAmount, uint128 takerFeeForProtocolAmount) = FeeMath.computeFees(
             step.feeAmount,
-            state.takerFeePips,
-            state.makerFeePips
+            takerFee,
+            makerFee
         );
         {
             Bundle storage bundle0 = bundles[boundary.bundle0Id];
