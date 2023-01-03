@@ -296,7 +296,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         // updates fee protocol
         // In the interest of gas-efficiency, overflow is permitted here, requiring us to
         // only collect the protocol fee prior to overflow
-        uint128 feeChannel = Math.mulDiv(state.feeProtocol, 7, 10).toUint128();
+        uint128 feeChannel = Math.mulDiv(state.feeProtocol, 8, 10).toUint128();
         unchecked {
             if (state.zeroForOne) {
                 channelFees[channel].token0 = channelFees[channel].token0 + feeChannel;

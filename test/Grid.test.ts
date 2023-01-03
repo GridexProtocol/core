@@ -461,7 +461,7 @@ describe("Grid", () => {
                     {
                         const {token0: amount0, token1: amount1} = await grid.protocolFees();
 
-                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 7n) / 10n;
+                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 8n) / 10n;
 
                         expect(amount0).to.equal(takerFeeForProtocolAmount.sub(feeChannel));
                         expect(amount1).to.equal(0);
@@ -585,7 +585,7 @@ describe("Grid", () => {
                     {
                         const {token0: amount0, token1: amount1} = await grid.protocolFees();
 
-                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 7n) / 10n;
+                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 8n) / 10n;
 
                         expect(amount0).to.equal(takerFeeForProtocolAmount.sub(feeChannel));
                         expect(amount1).to.equal(0);
@@ -712,7 +712,7 @@ describe("Grid", () => {
                     {
                         const {token0: amount0, token1: amount1} = await grid.protocolFees();
 
-                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 7n) / 10n;
+                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 8n) / 10n;
 
                         expect(amount0).to.equal(0);
                         expect(amount1).to.equal(takerFeeForProtocolAmount.sub(feeChannel));
@@ -948,7 +948,7 @@ describe("Grid", () => {
 
                         it("protocol fee and channel fee should be update", async () => {
                             const {token0: protocolAmount0, token1: protocolAmount1} = await ctx.grid.protocolFees();
-                            const feeChannel = (protocolAmountTotal.toBigInt() * 7n) / 10n;
+                            const feeChannel = (protocolAmountTotal.toBigInt() * 8n) / 10n;
                             expect(protocolAmount0).to.equal(protocolAmountTotal.sub(feeChannel));
                             expect(protocolAmount1).to.equal(0);
 
