@@ -18,6 +18,7 @@ contract SwapTest is IGridSwapCallback, AbstractPayFacade, Context {
         int256 amountSpecified;
         uint160 priceLimitX96;
         address payer;
+        address channel;
     }
 
     constructor(address _factory, address _weth9) AbstractPayFacade(_factory, _weth9) {}
@@ -44,13 +45,27 @@ contract SwapTest is IGridSwapCallback, AbstractPayFacade, Context {
         GridAddress.GridKey memory gridKey = GridAddress.gridKey(data.tokenA, data.tokenB, data.resolution);
         IGrid grid = IGrid(GridAddress.computeAddress(gridFactory, gridKey));
         for (uint256 i = 0; i < times; ++i) {
-            grid.swap(data.recipient, data.zeroForOne, data.amountSpecified, data.priceLimitX96, abi.encode(data));
+            grid.swap(
+                data.recipient,
+                data.channel,
+                data.zeroForOne,
+                data.amountSpecified,
+                data.priceLimitX96,
+                abi.encode(data)
+            );
         }
     }
 
     function input(SwapCalldata calldata data) external payable {
         GridAddress.GridKey memory gridKey = GridAddress.gridKey(data.tokenA, data.tokenB, data.resolution);
         IGrid grid = IGrid(GridAddress.computeAddress(gridFactory, gridKey));
-        grid.swap(data.recipient, data.zeroForOne, data.amountSpecified, data.priceLimitX96, abi.encode(data));
+        grid.swap(
+            data.recipient,
+            data.channel,
+            data.zeroForOne,
+            data.amountSpecified,
+            data.priceLimitX96,
+            abi.encode(data)
+        );
     }
 }

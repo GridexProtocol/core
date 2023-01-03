@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "./GridAddress.sol";
 
 library CallbackValidator {
-
     /// @dev Validates the `msg.sender` is the canonical grid address for the given parameters
     /// @param gridFactory The address of the grid factory
     /// @param gridKey The grid key to compute the canonical address for the grid

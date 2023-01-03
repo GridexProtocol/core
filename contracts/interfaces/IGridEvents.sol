@@ -5,12 +5,6 @@ import "./IGridStructs.sol";
 
 /// @title Events emitted by the grid contract
 interface IGridEvents {
-    /// @notice Emitted when the fee rate is updated
-    /// @param sender The address that initiated the change fee call
-    /// @param newTakerFee The new taker fee, denominated in hundredths of a bip (i.e. 1e-6)
-    /// @param newMakerFee The new maker fee, denominated in hundredths of a bip (i.e. 1e-6)
-    event ChangeFee(address indexed sender, int24 newTakerFee, int24 newMakerFee);
-
     /// @notice Emitted exactly once by a grid when #initialize is first called on the grid
     /// @param priceX96 The initial price of the grid, as a Q64.96
     /// @param boundary The initial boundary of the grid
@@ -110,4 +104,11 @@ interface IGridEvents {
     /// @param amount0 The amount of token0 protocol fees that is withdrawn
     /// @param amount1 The amount of token1 protocol fees that is withdrawn
     event CollectFeeProtocol(address indexed sender, address indexed recipient, uint128 amount0, uint128 amount1);
+
+    /// @notice Emitted when the collected channel fees are withdrawn by the sender
+    /// @param sender The address that collects the channel fees
+    /// @param recipient The address that receives the channel fees
+    /// @param amount0 The amount of token0 channel fees that is withdrawn
+    /// @param amount1 The amount of token1 channel fees that is withdrawn
+    event CollectFeeChannel(address indexed sender, address indexed recipient, uint128 amount0, uint128 amount1);
 }
