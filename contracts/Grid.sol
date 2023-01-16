@@ -598,14 +598,10 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         if (amount0 > 0) {
             uint256 balance0After = IERC20(token0).balanceOf(address(this));
             paid0 = (balance0After - balance0Before).toUint128();
-            // G_F0F: flash token0 failed
-            require(paid0 >= 0, "G_F0F");
         }
         if (amount1 > 0) {
             uint256 balance1After = IERC20(token1).balanceOf(address(this));
             paid1 = (balance1After - balance1Before).toUint128();
-            // G_F1F: flash token1 failed
-            require(paid1 >= 0, "G_F1F");
         }
 
         emit Flash(_msgSender(), recipient, amount0, amount1, paid0, paid1);

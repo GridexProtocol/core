@@ -40,6 +40,10 @@ contract FlashTest is IGridFlashCallback, AbstractPayFacade, Context {
             pay(gridKey.token0, decodeData.payer, _msgSender(), decodeData.amount0);
         }
 
+        if (decodeData.payMore && decodeData.payAmount0) {
+            pay(gridKey.token0, decodeData.payer, _msgSender(), 1e18);
+        }
+
         if (decodeData.payAmount1 && decodeData.amount1 > 0) {
             pay(gridKey.token1, decodeData.payer, _msgSender(), decodeData.amount1);
         }
