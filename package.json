@@ -1,13 +1,13 @@
 {
     "name": "@gridexprotocol/core",
-    "version": "0.2.2",
-    "author": "Gridex Labs",
-    "description": "Core smart contracts for Gridex Protocol",
+    "version": "0.3.0",
+    "author": "Gridex",
+    "description": "Core smart contracts of Gridex Protocol",
     "license": "BUSL-1.1",
     "publishConfig": {
         "registry": "https://npm.pkg.github.com"
     },
-    "homepage": "https://www.gridex.org",
+    "homepage": "https://gridex.org",
     "keywords": [
         "gridex",
         "core",
