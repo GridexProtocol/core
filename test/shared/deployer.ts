@@ -8,7 +8,6 @@ import {
     IWETHMinimum,
     SwapMathTest,
     SwapTest,
-    TradingConfig,
 } from "../../typechain-types";
 import {BigNumberish} from "ethers";
 import {MAX_UINT_128} from "./util";
@@ -24,24 +23,13 @@ export const deployWETH = async () => {
     return weth as IWETHMinimum;
 };
 
-export const deployTradingConfig = async () => {
-    const contractFactory = await ethers.getContractFactory("TradingConfig");
-    const tradingConfig = await contractFactory.deploy();
-    await tradingConfig.deployed();
-    return tradingConfig as TradingConfig;
-};
-
 export const deployGridFactory = async (weth9: string) => {
-    const [tradingConfig, gridFactoryFactory] = await Promise.all([
-        deployTradingConfig(),
-        ethers.getContractFactory("GridFactory"),
-    ]);
+    const gridFactoryFactory = await ethers.getContractFactory("GridFactory");
 
-    const gridFactory = await gridFactoryFactory.deploy(tradingConfig.address, weth9, bytecode);
+    const gridFactory = await gridFactoryFactory.deploy(weth9, bytecode);
     await gridFactory.deployed();
 
     return {
-        tradingConfig,
         gridFactory,
     };
 };

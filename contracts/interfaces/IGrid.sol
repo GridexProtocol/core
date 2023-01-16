@@ -63,9 +63,6 @@ interface IGrid {
     /// @return token1 The amount of token1 owed
     function tokensOweds(address owner) external view returns (uint128 token0, uint128 token1);
 
-    /// @notice The amounts of token0 and token1 that are owed to the protocol
-    function protocolFees() external view returns (uint128 token0, uint128 token1);
-
     /// @notice The amounts of token0 and token1 that are owed to the channel
     /// @param channel The address of channel
     function channelFees(address channel) external view returns (uint128 token0, uint128 token1);
@@ -190,18 +187,6 @@ interface IGrid {
     /// @return amount1 The amount of fees collected in token1
     function collect(
         address recipient,
-        uint128 amount0Requested,
-        uint128 amount1Requested
-    ) external returns (uint128 amount0, uint128 amount1);
-
-    /// @notice Collects the protocol fee accrued to the grid
-    /// @param amount0Requested The maximum amount of token0 to send.
-    /// Set to 0 if fees should only be collected in token1.
-    /// @param amount1Requested The maximum amount of token1 to send.
-    /// Set to 0 if fees should only be collected in token0.
-    /// @return amount0 The amount of protocol fees collected in token0
-    /// @return amount1 The amount of protocol fees collected in token1
-    function collectProtocolFees(
         uint128 amount0Requested,
         uint128 amount1Requested
     ) external returns (uint128 amount0, uint128 amount1);

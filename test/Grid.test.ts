@@ -134,7 +134,7 @@ describe("Grid", () => {
     describe("#initialize", () => {
         it("should revert with right error if not initialized", async () => {
             const {grid} = await loadFixture(deployAndCreateGridFixture);
-            await expect(grid.collectProtocolFees(BigNumber.from(0), BigNumber.from(0))).to.be.revertedWith("G_GL");
+            await expect(grid.collect(grid.address, BigNumber.from(0), BigNumber.from(0))).to.be.revertedWith("G_GL");
         });
 
         it("should revert with right error if price not in range", async () => {
@@ -459,15 +459,8 @@ describe("Grid", () => {
 
                     // check protocol fees and channel fees
                     {
-                        const {token0: amount0, token1: amount1} = await grid.protocolFees();
-
-                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 8n) / 10n;
-
-                        expect(amount0).to.equal(takerFeeForProtocolAmount.sub(feeChannel));
-                        expect(amount1).to.equal(0);
-
                         const {token0: channelAmount0, token1: channelAmount1} = await grid.channelFees(signer.address);
-                        expect(channelAmount0).to.equal(feeChannel);
+                        expect(channelAmount0).to.equal(takerFeeForProtocolAmount);
                         expect(channelAmount1).to.equal(0);
                     }
                     // check bundle
@@ -583,15 +576,8 @@ describe("Grid", () => {
 
                     // check protocol fees and channel fees
                     {
-                        const {token0: amount0, token1: amount1} = await grid.protocolFees();
-
-                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 8n) / 10n;
-
-                        expect(amount0).to.equal(takerFeeForProtocolAmount.sub(feeChannel));
-                        expect(amount1).to.equal(0);
-
                         const {token0: channelAmount0, token1: channelAmount1} = await grid.channelFees(signer.address);
-                        expect(channelAmount0).to.equal(feeChannel);
+                        expect(channelAmount0).to.equal(takerFeeForProtocolAmount);
                         expect(channelAmount1).to.equal(0);
                     }
                     // check bundle
@@ -710,16 +696,9 @@ describe("Grid", () => {
 
                     // check protocol fees and channel fees
                     {
-                        const {token0: amount0, token1: amount1} = await grid.protocolFees();
-
-                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 8n) / 10n;
-
-                        expect(amount0).to.equal(0);
-                        expect(amount1).to.equal(takerFeeForProtocolAmount.sub(feeChannel));
-
                         const {token0: channelAmount0, token1: channelAmount1} = await grid.channelFees(signer.address);
                         expect(channelAmount0).to.equal(0);
-                        expect(channelAmount1).to.equal(feeChannel);
+                        expect(channelAmount1).to.equal(takerFeeForProtocolAmount);
                     }
                     // check bundle
                     {
@@ -947,15 +926,10 @@ describe("Grid", () => {
                         });
 
                         it("protocol fee and channel fee should be update", async () => {
-                            const {token0: protocolAmount0, token1: protocolAmount1} = await ctx.grid.protocolFees();
-                            const feeChannel = (protocolAmountTotal.toBigInt() * 8n) / 10n;
-                            expect(protocolAmount0).to.equal(protocolAmountTotal.sub(feeChannel));
-                            expect(protocolAmount1).to.equal(0);
-
                             const {token0: channelAmount0, token1: channelAmount1} = await ctx.grid.channelFees(
                                 ctx.signer.address
                             );
-                            expect(channelAmount0).to.equal(feeChannel);
+                            expect(channelAmount0).to.equal(protocolAmountTotal);
                             expect(channelAmount1).to.equal(0);
                         });
 
@@ -1721,38 +1695,6 @@ describe("Grid", () => {
             await expect(grid.flash(ethers.constants.AddressZero, 0, 0, [])).to.be.revertedWith("G_GL");
         });
 
-        it("protocol fees should be accumulated", async () => {
-            let {token0: owed0Before, token1: owed1Before} = await ctx.grid.protocolFees();
-            for (let i = 0; i < 10; i++) {
-                const fee = mulDiv(10n ** 18n, 500n, 1e6, Rounding.Up);
-                await expect(
-                    flash.flash({
-                        tokenA: ctx.usdc.address,
-                        tokenB: ctx.weth.address,
-                        resolution: Resolution.MEDIUM,
-                        recipient: ctx.signer.address,
-                        payer: flash.address,
-                        amount0: 10n ** 18n,
-                        amount1: 10n ** 18n,
-                        payAmount0: true,
-                        payAmount1: true,
-                        payFee0: true,
-                        payFee1: true,
-                        payFeeMore: false,
-                    })
-                )
-                    .to.emit(ctx.grid, "Flash")
-                    .withArgs(flash.address, ctx.signer.address, 10n ** 18n, 10n ** 18n, fee, fee);
-
-                let {token0: owed0After, token1: owed1After} = await ctx.grid.protocolFees();
-                expect(owed0After.sub(owed0Before)).to.equal(fee);
-                expect(owed1After.sub(owed1Before)).to.equal(fee);
-
-                owed0Before = owed0After;
-                owed1Before = owed1After;
-            }
-        });
-
         const tests = [
             {
                 name: "insufficient balance of token0",
@@ -1761,9 +1703,7 @@ describe("Grid", () => {
                 amount1: 0n,
                 payAmount0: true,
                 payAmount1: true,
-                payFee0: true,
-                payFee1: true,
-                payFeeMore: true,
+                payMore: true,
                 expectRevertWithInsufficientBalance: true,
                 expectRevertWith: undefined,
                 expectRevertWithCode: undefined as any,
@@ -1775,9 +1715,7 @@ describe("Grid", () => {
                 amount1: 10n ** 18n * 10n,
                 payAmount0: true,
                 payAmount1: true,
-                payFee0: true,
-                payFee1: true,
-                payFeeMore: true,
+                payMore: true,
                 expectRevertWithInsufficientBalance: true,
                 expectRevertWith: undefined,
                 expectRevertWithCode: undefined,
@@ -1789,9 +1727,7 @@ describe("Grid", () => {
                 amount1: 0n,
                 payAmount0: true,
                 payAmount1: true,
-                payFee0: true,
-                payFee1: true,
-                payFeeMore: false,
+                payMore: false,
                 expectRevertWithInsufficientBalance: false,
                 expectRevertWith: undefined,
                 expectRevertWithCode: undefined,
@@ -1802,9 +1738,7 @@ describe("Grid", () => {
                 amount1: 10n ** 18n,
                 payAmount0: true,
                 payAmount1: true,
-                payFee0: true,
-                payFee1: true,
-                payFeeMore: false,
+                payMore: false,
                 expectRevertWithInsufficientBalance: false,
                 expectRevertWith: undefined,
                 expectRevertWithCode: undefined,
@@ -1815,9 +1749,7 @@ describe("Grid", () => {
                 amount1: 10n ** 18n,
                 payAmount0: true,
                 payAmount1: true,
-                payFee0: true,
-                payFee1: true,
-                payFeeMore: false,
+                payMore: false,
                 expectRevertWithInsufficientBalance: false,
                 expectRevertWith: undefined,
                 expectRevertWithCode: undefined,
@@ -1828,24 +1760,20 @@ describe("Grid", () => {
                 amount1: 10n ** 18n,
                 payAmount0: true,
                 payAmount1: true,
-                payFee0: true,
-                payFee1: true,
-                payFeeMore: true,
+                payMore: true,
                 expectRevertWithInsufficientBalance: false,
                 expectRevertWith: undefined,
                 expectRevertWithCode: undefined,
             },
             {
                 name: "not pay enough token0",
-                amount0: 10n ** 18n,
+                amount0: 11n ** 18n,
                 amount1: 0n,
                 payAmount0: true,
                 payAmount1: true,
-                payFee0: false,
-                payFee1: true,
-                payFeeMore: false,
-                expectRevertWithInsufficientBalance: false,
-                expectRevertWith: "G_F0F",
+                payMore: false,
+                expectRevertWithInsufficientBalance: true,
+                expectRevertWith: undefined,
                 expectRevertWithCode: undefined,
             },
             {
@@ -1854,9 +1782,7 @@ describe("Grid", () => {
                 amount1: 0n,
                 payAmount0: false,
                 payAmount1: true,
-                payFee0: false,
-                payFee1: true,
-                payFeeMore: false,
+                payMore: false,
                 expectRevertWithInsufficientBalance: false,
                 expectRevertWith: undefined,
                 expectRevertWithCode: 0x11,
@@ -1864,14 +1790,12 @@ describe("Grid", () => {
             {
                 name: "not pay enough token1",
                 amount0: 0n,
-                amount1: 10n ** 18n,
+                amount1: 11n ** 18n,
                 payAmount0: true,
                 payAmount1: true,
-                payFee0: true,
-                payFee1: false,
-                payFeeMore: false,
-                expectRevertWithInsufficientBalance: false,
-                expectRevertWith: "G_F1F",
+                payMore: false,
+                expectRevertWithInsufficientBalance: true,
+                expectRevertWith: undefined,
                 expectRevertWithCode: undefined,
             },
             {
@@ -1880,9 +1804,7 @@ describe("Grid", () => {
                 amount1: 10n ** 18n * 2n,
                 payAmount0: true,
                 payAmount1: false,
-                payFee0: true,
-                payFee1: true,
-                payFeeMore: false,
+                payMore: false,
                 expectRevertWithInsufficientBalance: false,
                 expectRevertWith: undefined,
                 expectRevertWithCode: 0x11,
@@ -1916,9 +1838,7 @@ describe("Grid", () => {
                     amount1: test.amount1,
                     payAmount0: test.payAmount0,
                     payAmount1: test.payAmount1,
-                    payFee0: test.payFee0,
-                    payFee1: test.payFee1,
-                    payFeeMore: test.payFeeMore,
+                    payMore: test.payMore,
                 });
                 if (test.expectRevertWithInsufficientBalance) {
                     if (
@@ -1934,190 +1854,25 @@ describe("Grid", () => {
                 } else if (test.expectRevertWithCode != undefined) {
                     await expect(txPromise).to.revertedWithPanic(test.expectRevertWithCode);
                 } else {
-                    const feeAdjustment = test.payFeeMore ? 2n : 1n;
-                    const fee0 = BigNumber.from(mulDiv(test.amount0, 500n, 1e6, Rounding.Up)).mul(feeAdjustment);
-                    const fee1 = BigNumber.from(mulDiv(test.amount1, 500n, 1e6, Rounding.Up)).mul(feeAdjustment);
+                    const payMoreAdjustment = test.payMore ? 1n : 0n;
+                    const payMore0 = BigNumber.from("1000000000000000000").mul(payMoreAdjustment);
+                    const payMore1 = BigNumber.from("1000000000000000000").mul(payMoreAdjustment);
 
                     await expect(txPromise)
                         .to.emit(ctx.grid, "Flash")
-                        .withArgs(flash.address, recipient, test.amount0, test.amount1, fee0, fee1);
+                        .withArgs(flash.address, recipient, test.amount0, test.amount1, payMore0, payMore1);
 
                     const [gridToken0After, gridToken1After] = [
                         await balanceOf(token0, ctx.grid.address),
                         await balanceOf(token1, ctx.grid.address),
                     ];
 
-                    expect(gridToken0After.sub(gridToken0Before)).to.equal(fee0);
-                    expect(gridToken1After.sub(gridToken1Before)).to.equal(fee1);
+                    expect(gridToken0After.sub(gridToken0Before)).to.equal(payMore0);
+                    expect(gridToken1After.sub(gridToken1Before)).to.equal(payMore1);
 
                     expect(await balanceOf(token0, recipient)).to.equal(test.amount0);
                     expect(await balanceOf(token1, recipient)).to.equal(test.amount1);
-
-                    const {token0: owed0After, token1: owed1After} = await ctx.grid.protocolFees();
-                    expect(owed0After).to.equal(fee0);
-                    expect(owed1After).to.equal(fee1);
                 }
-            });
-        });
-    });
-
-    describe("#collectProtocolFees", () => {
-        let ctx: {
-            signer: SignerWithAddress;
-            otherAccount: SignerWithAddress;
-            gridTestHelper: GridTestHelper;
-            usdc: IERC20;
-            weth: IWETHMinimum;
-            feeMath: FeeMathTest;
-            grid: Grid;
-            swapMath: SwapMathTest;
-            boundaryMath: BoundaryMathTest;
-            gridFactory: GridFactory;
-        };
-        let flash: FlashTest;
-
-        beforeEach("deploy flash contract", async () => {
-            ctx = await loadFixture(createGridAndInitializeGridFixture);
-
-            flash = await deployFlashTest(ctx.gridFactory.address, ctx.weth.address);
-
-            await Promise.all([
-                ctx.usdc.transfer(ctx.grid.address, 10n ** 18n * 2n),
-                ctx.weth.deposit({value: 10n ** 18n * 2000n}),
-                flash.deployed(),
-
-                ctx.usdc.transfer(flash.address, 10n ** 18n * 1000n),
-            ]);
-            await ctx.weth.transfer(ctx.grid.address, 10n ** 18n * 2n);
-            await ctx.weth.transfer(flash.address, 10n ** 18n * 1000n);
-
-            await flash.flash({
-                tokenA: ctx.usdc.address,
-                tokenB: ctx.weth.address,
-                resolution: Resolution.MEDIUM,
-                recipient: ctx.signer.address,
-                payer: flash.address,
-                amount0: 10n ** 18n,
-                amount1: 10n ** 18n,
-                payAmount0: true,
-                payAmount1: true,
-                payFee0: true,
-                payFee1: true,
-                payFeeMore: false,
-            });
-        });
-
-        it("should revert with right error if not initialized", async () => {
-            const {grid} = await deployAndCreateGridFixture();
-            await expect(grid.collectProtocolFees(0, 0)).to.be.revertedWith("G_GL");
-        });
-
-        it("protocol fees should be accrued", async () => {
-            let {token0: owed0Before, token1: owed1Before} = await ctx.grid.protocolFees();
-            const signers = [ctx.signer, ctx.otherAccount];
-            for (let i = 0; i < 10; i++) {
-                const signer = signers[i % 2];
-                await expect(ctx.grid.connect(signer).collectProtocolFees(1000, 1000))
-                    .to.emit(ctx.grid, "CollectFeeProtocol")
-                    .withArgs(signer.address, ctx.signer.address, 1000, 1000);
-
-                let {token0: owed0After, token1: owed1After} = await ctx.grid.protocolFees();
-                expect(owed0Before.sub(owed0After)).to.equal(1000);
-                expect(owed1Before.sub(owed1After)).to.equal(1000);
-
-                owed0Before = owed0After;
-                owed1Before = owed1After;
-            }
-        });
-
-        const maxRequested = BigNumber.from(mulDiv(10n ** 18n, 500, 1e6, Rounding.Up)).toBigInt();
-        const tests = [
-            {
-                name: "full withdrawal",
-                amount0Requested: maxRequested,
-                amount1Requested: maxRequested,
-                expectAmount0Received: maxRequested,
-                expectAmount1Received: maxRequested,
-            },
-            {
-                name: "partially withdrawal",
-                amount0Requested: maxRequested / 2n,
-                amount1Requested: maxRequested / 2n,
-                expectAmount0Received: maxRequested / 2n,
-                expectAmount1Received: maxRequested / 2n,
-            },
-            {
-                name: "amount requested too much",
-                amount0Requested: maxRequested * 100n,
-                amount1Requested: maxRequested * 100n,
-                expectAmount0Received: maxRequested,
-                expectAmount1Received: maxRequested,
-            },
-            {
-                name: "only request token0",
-                amount0Requested: maxRequested,
-                amount1Requested: 0n,
-                expectAmount0Received: maxRequested,
-                expectAmount1Received: 0n,
-            },
-            {
-                name: "only request token1",
-                amount0Requested: 0n,
-                amount1Requested: maxRequested,
-                expectAmount0Received: 0n,
-                expectAmount1Received: maxRequested,
-            },
-        ];
-
-        tests.forEach((test) => {
-            it(`${test.name}`, async () => {
-                const {token0, token1} = await sortedToken(ctx.usdc.address, ctx.weth.address);
-                const balanceOf = async function (token: string, address: string) {
-                    if (token.toLowerCase() == ctx.usdc.address.toLowerCase()) {
-                        return ctx.usdc.balanceOf(address);
-                    }
-                    return ctx.weth.balanceOf(address);
-                };
-
-                const {token0: owed0Before, token1: owed1Before} = await ctx.grid.protocolFees();
-                const [token0Before, token1Before] = [
-                    await balanceOf(token0, ctx.grid.address),
-                    await balanceOf(token1, ctx.grid.address),
-                ];
-                const [recipientToken0Before, recipientToken1Before] = [
-                    await balanceOf(token0, ctx.signer.address),
-                    await balanceOf(token1, ctx.signer.address),
-                ];
-
-                await expect(
-                    ctx.grid.connect(ctx.otherAccount).collectProtocolFees(test.amount0Requested, test.amount1Requested)
-                )
-                    .to.emit(ctx.grid, "CollectFeeProtocol")
-                    .withArgs(
-                        ctx.otherAccount.address,
-                        ctx.signer.address,
-                        test.expectAmount0Received,
-                        test.expectAmount1Received
-                    );
-
-                const [token0After, token1After] = [
-                    await balanceOf(token0, ctx.grid.address),
-                    await balanceOf(token1, ctx.grid.address),
-                ];
-
-                expect(token0Before.sub(token0After)).to.equal(test.expectAmount0Received);
-                expect(token1Before.sub(token1After)).to.equal(test.expectAmount1Received);
-
-                const {token0: owed0After, token1: owed1After} = await ctx.grid.protocolFees();
-                expect(owed0Before.sub(owed0After)).to.equal(test.expectAmount0Received);
-                expect(owed1Before.sub(owed1After)).to.equal(test.expectAmount1Received);
-
-                const [recipientToken0After, recipientToken1After] = [
-                    await balanceOf(token0, ctx.signer.address),
-                    await balanceOf(token1, ctx.signer.address),
-                ];
-                expect(recipientToken0After.sub(recipientToken0Before)).to.equal(test.expectAmount0Received);
-                expect(recipientToken1After.sub(recipientToken1Before)).to.equal(test.expectAmount1Received);
             });
         });
     });
