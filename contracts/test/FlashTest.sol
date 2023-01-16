@@ -20,16 +20,14 @@ contract FlashTest is IGridFlashCallback, AbstractPayFacade, Context {
         uint256 amount1;
         bool payAmount0;
         bool payAmount1;
-        bool payFee0;
-        bool payFee1;
-        bool payFeeMore;
+        bool payMore;
     }
 
     uint256 public gasUsed;
 
     constructor(address _factory, address _weth9) AbstractPayFacade(_factory, _weth9) {}
 
-    function gridexFlashCallback(uint128 fee0, uint128 fee1, bytes calldata data) external override {
+    function gridexFlashCallback(bytes calldata data) external override {
         FlashCalldata memory decodeData = abi.decode(data, (FlashCalldata));
         GridAddress.GridKey memory gridKey = GridAddress.gridKey(
             decodeData.tokenA,
@@ -42,16 +40,12 @@ contract FlashTest is IGridFlashCallback, AbstractPayFacade, Context {
             pay(gridKey.token0, decodeData.payer, _msgSender(), decodeData.amount0);
         }
 
-        if (decodeData.payFee0 && fee0 > 0) {
-            pay(gridKey.token0, decodeData.payer, _msgSender(), decodeData.payFeeMore ? fee0 * 2 : fee0);
-        }
-
         if (decodeData.payAmount1 && decodeData.amount1 > 0) {
             pay(gridKey.token1, decodeData.payer, _msgSender(), decodeData.amount1);
         }
 
-        if (decodeData.payFee1 && fee1 > 0) {
-            pay(gridKey.token1, decodeData.payer, _msgSender(), decodeData.payFeeMore ? fee1 * 2 : fee1);
+        if (decodeData.payMore && decodeData.payAmount1) {
+            pay(gridKey.token1, decodeData.payer, _msgSender(), 1e18);
         }
     }
 

@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IGrid.sol";
-import "./interfaces/ITradingConfig.sol";
 import "./interfaces/IWETHMinimum.sol";
 import "./interfaces/callback/IGridSwapCallback.sol";
 import "./interfaces/callback/IGridPlaceMakerOrderCallback.sol";
@@ -37,14 +36,12 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     int24 public immutable override resolution;
 
     address private immutable weth9;
-    address private immutable tradingConfig;
     address private immutable priceOracle;
 
     int24 public immutable takerFee;
     int24 public immutable makerFee;
 
     Slot0 public override slot0;
-    TokensOwed public override protocolFees;
     mapping(address => TokensOwed) public override channelFees;
 
     mapping(int24 => Boundary) public override boundaries0;
@@ -64,9 +61,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     receive() external payable {}
 
     constructor() {
-        (token0, token1, resolution, tradingConfig, priceOracle, weth9) = IGridDeployer(_msgSender()).parameters();
-
-        (takerFee, makerFee) = ITradingConfig(tradingConfig).fees(resolution);
+        (token0, token1, resolution, takerFee, makerFee, priceOracle, weth9) = IGridDeployer(_msgSender()).parameters();
     }
 
     modifier lock() {
@@ -293,17 +288,14 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             (slot0.priceX96, slot0.boundary) = (state.priceX96, state.boundary);
         }
 
-        // updates fee protocol
+        // updates the protocol fee
         // In the interest of gas-efficiency, overflow is permitted here, requiring us to
         // only collect the protocol fee prior to overflow
-        uint128 feeChannel = Math.mulDiv(state.feeProtocol, 8, 10).toUint128();
         unchecked {
             if (state.zeroForOne) {
-                channelFees[channel].token0 = channelFees[channel].token0 + feeChannel;
-                protocolFees.token0 = protocolFees.token0 + (state.feeProtocol - feeChannel);
+                channelFees[channel].token0 = channelFees[channel].token0 + state.feeProtocol;
             } else {
-                channelFees[channel].token1 = channelFees[channel].token1 + feeChannel;
-                protocolFees.token1 = protocolFees.token1 + (state.feeProtocol - feeChannel);
+                channelFees[channel].token1 = channelFees[channel].token1 + state.feeProtocol;
             }
         }
 
@@ -589,21 +581,17 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     function flash(address recipient, uint256 amount0, uint256 amount1, bytes calldata data) external override lock {
         uint256 balance0Before;
         uint256 balance1Before;
-        uint128 fee0;
-        uint128 fee1;
 
         if (amount0 > 0) {
             balance0Before = IERC20(token0).balanceOf(address(this));
-            fee0 = Math.mulDiv(amount0, uint24(takerFee), 1e6, Math.Rounding.Up).toUint128();
             SafeERC20.safeTransfer(IERC20(token0), recipient, amount0);
         }
         if (amount1 > 0) {
             balance1Before = IERC20(token1).balanceOf(address(this));
-            fee1 = Math.mulDiv(amount1, uint24(takerFee), 1e6, Math.Rounding.Up).toUint128();
             SafeERC20.safeTransfer(IERC20(token1), recipient, amount1);
         }
 
-        IGridFlashCallback(_msgSender()).gridexFlashCallback(fee0, fee1, data);
+        IGridFlashCallback(_msgSender()).gridexFlashCallback(data);
 
         uint128 paid0;
         uint128 paid1;
@@ -611,17 +599,13 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             uint256 balance0After = IERC20(token0).balanceOf(address(this));
             paid0 = (balance0After - balance0Before).toUint128();
             // G_F0F: flash token0 failed
-            require(paid0 >= fee0, "G_F0F");
-
-            protocolFees.token0 = protocolFees.token0 + paid0;
+            require(paid0 >= 0, "G_F0F");
         }
         if (amount1 > 0) {
             uint256 balance1After = IERC20(token1).balanceOf(address(this));
             paid1 = (balance1After - balance1Before).toUint128();
             // G_F1F: flash token1 failed
-            require(paid1 >= fee1, "G_F1F");
-
-            protocolFees.token1 = protocolFees.token1 + paid1;
+            require(paid1 >= 0, "G_F1F");
         }
 
         emit Flash(_msgSender(), recipient, amount0, amount1, paid0, paid1);
@@ -636,18 +620,6 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         (amount0, amount1) = _collectOwed(tokensOweds[_msgSender()], recipient, amount0Requested, amount1Requested);
 
         emit Collect(_msgSender(), recipient, amount0, amount1);
-    }
-
-    /// @inheritdoc IGrid
-    function collectProtocolFees(
-        uint128 amount0Requested,
-        uint128 amount1Requested
-    ) external override lock returns (uint128 amount0, uint128 amount1) {
-        address collector = ITradingConfig(tradingConfig).protocolFeeCollector();
-
-        (amount0, amount1) = _collectOwed(protocolFees, collector, amount0Requested, amount1Requested);
-
-        emit CollectFeeProtocol(_msgSender(), collector, amount0, amount1);
     }
 
     /// @inheritdoc IGrid

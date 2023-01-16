@@ -10,7 +10,8 @@ interface IGridDeployer {
         address token0;
         address token1;
         int24 resolution;
-        address tradingConfig;
+        int24 takerFee;
+        int24 makerFee;
         address priceOracle;
         address weth9;
     }
@@ -23,7 +24,8 @@ interface IGridDeployer {
     /// @return token0 The first token in the grid, after sorting by address
     /// @return token1 The second token in the grid, after sorting by address
     /// @return resolution The step size in initialized boundaries for a grid created with a given fee
-    /// @return tradingConfig The address of the trading config contract
+    /// @return takerFee The taker fee, denominated in hundredths of a bip (i.e. 1e-6)
+    /// @return makerFee The maker fee, denominated in hundredths of a bip (i.e. 1e-6)
     /// @return priceOracle The address of the price oracle contract
     /// @return weth9 The address of the WETH9 contract
     function parameters()
@@ -33,7 +35,8 @@ interface IGridDeployer {
             address token0,
             address token1,
             int24 resolution,
-            address tradingConfig,
+            int24 takerFee,
+            int24 makerFee,
             address priceOracle,
             address weth9
         );
