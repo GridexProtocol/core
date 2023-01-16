@@ -134,7 +134,7 @@ describe("Grid", () => {
     describe("#initialize", () => {
         it("should revert with right error if not initialized", async () => {
             const {grid} = await loadFixture(deployAndCreateGridFixture);
-            await expect(grid.collectProtocolFees(BigNumber.from(0), BigNumber.from(0))).to.be.revertedWith("G_GL");
+            await expect(grid.collect(grid.address, BigNumber.from(0), BigNumber.from(0))).to.be.revertedWith("G_GL");
         });
 
         it("should revert with right error if price not in range", async () => {
@@ -459,15 +459,8 @@ describe("Grid", () => {
 
                     // check protocol fees and channel fees
                     {
-                        const {token0: amount0, token1: amount1} = await grid.protocolFees();
-
-                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 8n) / 10n;
-
-                        expect(amount0).to.equal(takerFeeForProtocolAmount.sub(feeChannel));
-                        expect(amount1).to.equal(0);
-
                         const {token0: channelAmount0, token1: channelAmount1} = await grid.channelFees(signer.address);
-                        expect(channelAmount0).to.equal(feeChannel);
+                        expect(channelAmount0).to.equal(takerFeeForProtocolAmount);
                         expect(channelAmount1).to.equal(0);
                     }
                     // check bundle
@@ -583,15 +576,8 @@ describe("Grid", () => {
 
                     // check protocol fees and channel fees
                     {
-                        const {token0: amount0, token1: amount1} = await grid.protocolFees();
-
-                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 8n) / 10n;
-
-                        expect(amount0).to.equal(takerFeeForProtocolAmount.sub(feeChannel));
-                        expect(amount1).to.equal(0);
-
                         const {token0: channelAmount0, token1: channelAmount1} = await grid.channelFees(signer.address);
-                        expect(channelAmount0).to.equal(feeChannel);
+                        expect(channelAmount0).to.equal(takerFeeForProtocolAmount);
                         expect(channelAmount1).to.equal(0);
                     }
                     // check bundle
@@ -710,16 +696,9 @@ describe("Grid", () => {
 
                     // check protocol fees and channel fees
                     {
-                        const {token0: amount0, token1: amount1} = await grid.protocolFees();
-
-                        const feeChannel = (takerFeeForProtocolAmount.toBigInt() * 8n) / 10n;
-
-                        expect(amount0).to.equal(0);
-                        expect(amount1).to.equal(takerFeeForProtocolAmount.sub(feeChannel));
-
                         const {token0: channelAmount0, token1: channelAmount1} = await grid.channelFees(signer.address);
                         expect(channelAmount0).to.equal(0);
-                        expect(channelAmount1).to.equal(feeChannel);
+                        expect(channelAmount1).to.equal(takerFeeForProtocolAmount);
                     }
                     // check bundle
                     {
@@ -947,15 +926,10 @@ describe("Grid", () => {
                         });
 
                         it("protocol fee and channel fee should be update", async () => {
-                            const {token0: protocolAmount0, token1: protocolAmount1} = await ctx.grid.protocolFees();
-                            const feeChannel = (protocolAmountTotal.toBigInt() * 8n) / 10n;
-                            expect(protocolAmount0).to.equal(protocolAmountTotal.sub(feeChannel));
-                            expect(protocolAmount1).to.equal(0);
-
                             const {token0: channelAmount0, token1: channelAmount1} = await ctx.grid.channelFees(
                                 ctx.signer.address
                             );
-                            expect(channelAmount0).to.equal(feeChannel);
+                            expect(channelAmount0).to.equal(protocolAmountTotal);
                             expect(channelAmount1).to.equal(0);
                         });
 
@@ -1719,38 +1693,6 @@ describe("Grid", () => {
         it("should revert with right error if not initialized", async () => {
             const {grid} = await deployAndCreateGridFixture();
             await expect(grid.flash(ethers.constants.AddressZero, 0, 0, [])).to.be.revertedWith("G_GL");
-        });
-
-        it("protocol fees should be accumulated", async () => {
-            let {token0: owed0Before, token1: owed1Before} = await ctx.grid.protocolFees();
-            for (let i = 0; i < 10; i++) {
-                const fee = mulDiv(10n ** 18n, 500n, 1e6, Rounding.Up);
-                await expect(
-                    flash.flash({
-                        tokenA: ctx.usdc.address,
-                        tokenB: ctx.weth.address,
-                        resolution: Resolution.MEDIUM,
-                        recipient: ctx.signer.address,
-                        payer: flash.address,
-                        amount0: 10n ** 18n,
-                        amount1: 10n ** 18n,
-                        payAmount0: true,
-                        payAmount1: true,
-                        payFee0: true,
-                        payFee1: true,
-                        payFeeMore: false,
-                    })
-                )
-                    .to.emit(ctx.grid, "Flash")
-                    .withArgs(flash.address, ctx.signer.address, 10n ** 18n, 10n ** 18n, fee, fee);
-
-                let {token0: owed0After, token1: owed1After} = await ctx.grid.protocolFees();
-                expect(owed0After.sub(owed0Before)).to.equal(fee);
-                expect(owed1After.sub(owed1Before)).to.equal(fee);
-
-                owed0Before = owed0After;
-                owed1Before = owed1After;
-            }
         });
 
         const tests = [
