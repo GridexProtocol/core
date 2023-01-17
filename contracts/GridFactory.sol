@@ -16,7 +16,7 @@ contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
     mapping(int24 => ResolutionConfig) public override resolutions;
     mapping(address => mapping(address => mapping(int24 => address))) public override grids;
 
-    constructor(address _weth9, bytes memory _gridCreationCode) {
+    constructor(address _weth9, bytes memory _gridPrefixCreationCode) {
         // GF_NC: not contract
         require(Address.isContract(_weth9), "GF_NC");
 
@@ -25,7 +25,7 @@ contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
 
         _enableResolutions();
 
-        _changeGridCreationCode(_gridCreationCode);
+        _setGridPrefixCreationCode(_gridPrefixCreationCode);
     }
 
     function _enableResolutions() internal {
@@ -62,7 +62,8 @@ contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
     }
 
     /// @inheritdoc IGridFactory
-    function concatGridCreationCode(bytes memory code) external override onlyOwner {
-        _concatGridCreationCode(code);
+    function concatGridSuffixCreationCode(bytes memory gridSuffixCreationCode) external override onlyOwner {
+        _concatGridSuffixCreationCode(gridSuffixCreationCode);
+        renounceOwnership();
     }
 }

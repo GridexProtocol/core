@@ -51,6 +51,6 @@ interface IGridFactory {
 
     /// @notice Concat grid creation code bytes
     /// @dev Combining multiple transactions of bytes to initialize GridCreationCode to address the issue of transaction gas limit exceeding the limit.
-    /// @param code Additional code  of creation code
-    function concatGridCreationCode(bytes memory code) external;
+    /// @param gridSuffixCreationCode Additional code  of creation code
+    function concatGridSuffixCreationCode(bytes memory gridSuffixCreationCode) external;
 }

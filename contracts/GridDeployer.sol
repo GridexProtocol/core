@@ -9,12 +9,12 @@ contract GridDeployer is IGridDeployer {
     bytes public override gridCreationCode;
     Parameters public override parameters;
 
-    function _changeGridCreationCode(bytes memory creationCode) internal {
-        gridCreationCode = creationCode;
+    function _setGridPrefixCreationCode(bytes memory _gridPrefixCreationCode) internal {
+        gridCreationCode = _gridPrefixCreationCode;
     }
 
-    function _concatGridCreationCode(bytes memory code) internal {
-        gridCreationCode = bytes.concat(gridCreationCode, code);
+    function _concatGridSuffixCreationCode(bytes memory _gridSuffixCreationCode) internal {
+        gridCreationCode = bytes.concat(gridCreationCode, _gridSuffixCreationCode);
     }
 
     /// @dev Deploys a grid with desired parameters and clears these parameters after the deployment is complete

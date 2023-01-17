@@ -26,10 +26,12 @@ export const deployWETH = async () => {
 export const deployGridFactory = async (weth9: string) => {
     const gridFactoryFactory = await ethers.getContractFactory("GridFactory");
 
-    const gridFactory = await gridFactoryFactory.deploy(weth9, bytecode.slice(0, bytecode.length/2 + bytecode.length%2));
+    const gridFactory = await gridFactoryFactory.deploy(
+        weth9,
+        bytecode.slice(0, bytecode.length / 2 + (bytecode.length % 2))
+    );
     await gridFactory.deployed();
-    await gridFactory.concatGridCreationCode("0x" + bytecode.slice(bytecode.length/2 + bytecode.length%2));
-    await gridFactory.renounceOwnership();
+    await gridFactory.concatGridSuffixCreationCode("0x" + bytecode.slice(bytecode.length / 2 + (bytecode.length % 2)));
 
     return {
         gridFactory,
