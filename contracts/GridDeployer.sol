@@ -13,6 +13,10 @@ contract GridDeployer is IGridDeployer {
         gridCreationCode = creationCode;
     }
 
+    function _concatGridCreationCode(bytes memory code) internal {
+        gridCreationCode = bytes.concat(gridCreationCode, code);
+    }
+
     /// @dev Deploys a grid with desired parameters and clears these parameters after the deployment is complete
     /// @param token0 The first token in the grid, after sorting by address
     /// @param token1 The second token in the grid, after sorting by address

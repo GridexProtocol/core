@@ -48,4 +48,9 @@ interface IGridFactory {
     /// @param resolution The step size in initialized boundaries for a grid created with a given fee
     /// @return grid The address of the deployed grid
     function createGrid(address tokenA, address tokenB, int24 resolution) external returns (address grid);
+
+    /// @notice Concat grid creation code bytes
+    /// @dev Combining multiple transactions of bytes to initialize GridCreationCode to address the issue of transaction gas limit exceeding the limit.
+    /// @param code Additional code  of creation code
+    function concatGridCreationCode(bytes memory code) external;
 }

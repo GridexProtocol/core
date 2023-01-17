@@ -2,12 +2,13 @@
 pragma solidity ^0.8.8;
 
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IGridFactory.sol";
 import "./GridDeployer.sol";
 import "./PriceOracle.sol";
 
 /// @title The implementation of a Gridex grid factory
-contract GridFactory is IGridFactory, Context, GridDeployer {
+contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
     int24 constant ALLOW_MAX_FEE = 1e4;
 
     address public immutable override priceOracle;
@@ -58,5 +59,10 @@ contract GridFactory is IGridFactory, Context, GridDeployer {
         grids[tokenA][tokenB][resolution] = grid;
         grids[tokenB][tokenA][resolution] = grid;
         emit GridCreated(token0, token1, resolution, grid);
+    }
+
+    /// @inheritdoc IGridFactory
+    function concatGridCreationCode(bytes memory code) external override onlyOwner {
+        _concatGridCreationCode(code);
     }
 }
