@@ -61,9 +61,12 @@ library BoundaryBitmap {
     {
         int24 boundaryUpper = boundaryLower + resolution;
         if (currentBoundaryInitialized) {
-            uint160 boundaryLowerPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryLower);
-            uint160 boundaryUpperPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryUpper);
-            if ((lte && boundaryLowerPriceX96 < priceX96) || (!lte && boundaryUpperPriceX96 > priceX96)) {
+            uint160 boundaryLowerPriceX96;
+            uint160 boundaryUpperPriceX96;
+            if (
+                (lte && (boundaryLowerPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryLower)) < priceX96) ||
+                (!lte && (boundaryUpperPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryUpper)) > priceX96)
+            ) {
                 return (boundaryLower, true, boundaryLowerPriceX96, boundaryUpperPriceX96);
             }
         }

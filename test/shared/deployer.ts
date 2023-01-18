@@ -12,6 +12,7 @@ import {
 import {BigNumberish} from "ethers";
 import {MAX_UINT_128} from "./util";
 import {bytecode} from "../../artifacts/contracts/Grid.sol/Grid.json";
+import {isHexPrefixed} from "hardhat/internal/hardhat-network/provider/utils/isHexPrefixed";
 
 const WETH9 = require("../contracts/WETH9.json");
 
@@ -26,17 +27,28 @@ export const deployWETH = async () => {
 export const deployGridFactory = async (weth9: string) => {
     const gridFactoryFactory = await ethers.getContractFactory("GridFactory");
 
+    const bytecodeBytes = hexToBytes(bytecode);
+    const prefixLength = Math.floor(bytecodeBytes.length / 2);
     const gridFactory = await gridFactoryFactory.deploy(
         weth9,
-        bytecode.slice(0, bytecode.length / 2 + (bytecode.length % 2))
+        bytecodeBytes.slice(0, prefixLength),
     );
     await gridFactory.deployed();
-    await gridFactory.concatGridSuffixCreationCode("0x" + bytecode.slice(bytecode.length / 2 + (bytecode.length % 2)));
+    await gridFactory.concatGridSuffixCreationCode(bytecodeBytes.slice(prefixLength));
 
     return {
         gridFactory,
     };
 };
+
+function hexToBytes(hex: string) {
+    if (isHexPrefixed(hex)) {
+        hex = hex.substring(2);
+    }
+    let bytes = [];
+    for (let c = 0; c < hex.length; c += 2) bytes.push(parseInt(hex.substr(c, 2), 16));
+    return bytes;
+}
 
 export const deploySwapMath = async () => {
     const swapMathFactory = await ethers.getContractFactory("SwapMathTest");
