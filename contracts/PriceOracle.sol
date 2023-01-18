@@ -115,10 +115,11 @@ contract PriceOracle is IPriceOracle {
         boundaryCumulatives = new int56[](secondsAgos.length);
         (, int24 boundary, , ) = IGrid(grid).slot0();
         uint32 blockTimestamp = uint32(block.timestamp);
+        GridPriceData[65535] storage targetGridPriceData = gridPriceData[grid];
         for (uint256 i = 0; i < secondsAgos.length; i++) {
             boundaryCumulatives[i] = _getBoundaryCumulative(
                 state,
-                gridPriceData[grid],
+                targetGridPriceData,
                 boundary,
                 blockTimestamp,
                 secondsAgos[i]
