@@ -46,7 +46,7 @@ contract PriceOracle is IPriceOracle {
     function _update(address grid, int24 boundary, uint32 blockTimestamp) internal {
         GridOracleState memory stateCache = gridOracleStates[grid];
         // PO_UR: unregistered grid
-        require(stateCache.capacityNext >= 1, "PO_UR");
+        require(stateCache.capacity >= 1, "PO_UR");
 
         GridPriceData storage lastData = gridPriceData[grid][stateCache.index];
 
@@ -71,10 +71,10 @@ contract PriceOracle is IPriceOracle {
     /// @inheritdoc IPriceOracle
     function increaseCapacity(address grid, uint16 capacityNext) external override {
         GridOracleState storage state = gridOracleStates[grid];
-        uint16 capacityOld = state.capacityNext;
         // PO_UR: unregistered grid
-        require(capacityOld >= 1, "PO_UR");
+        require(state.capacity >= 1, "PO_UR");
 
+        uint16 capacityOld = state.capacityNext;
         if (capacityOld >= capacityNext) return;
 
         for (uint16 i = capacityOld; i < capacityNext; i++) {
