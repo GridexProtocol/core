@@ -24,28 +24,33 @@ library BundleMath {
         uint128 makerAmountRemaining = self.makerAmountRemaining;
         // the amount out actually paid to the taker
         parameters.amountOutUsed = amountOut <= makerAmountRemaining ? amountOut : makerAmountRemaining;
-        unchecked {
-            parameters.amountOutRemaining = amountOut - parameters.amountOutUsed;
 
-            // updates maker amount remaining
-            self.makerAmountRemaining = makerAmountRemaining - parameters.amountOutUsed;
+        if (parameters.amountOutUsed == amountOut) {
+            parameters.amountInUsed = amountIn;
+
+            parameters.takerFeeForMakerAmountUsed = takerFeeForMakerAmount;
+        } else {
+            parameters.amountInUsed = Math.mulDiv(parameters.amountOutUsed, amountIn, amountOut);
+
+            parameters.takerFeeForMakerAmountUsed = Math
+                .mulDiv(parameters.amountOutUsed, takerFeeForMakerAmount, amountOut)
+                .toUint128();
+
+            unchecked {
+                parameters.amountOutRemaining = amountOut - parameters.amountOutUsed;
+
+                parameters.amountInRemaining = amountIn - parameters.amountInUsed;
+
+                parameters.takerFeeForMakerAmountRemaining =
+                    takerFeeForMakerAmount -
+                    parameters.takerFeeForMakerAmountUsed;
+            }
         }
 
-        // the amount in actually paid to the maker
-        parameters.amountInUsed = Math.mulDiv(parameters.amountOutUsed, amountIn, amountOut);
-        unchecked {
-            parameters.amountInRemaining = amountIn - parameters.amountInUsed;
-        }
+        // updates maker amount remaining
+        self.makerAmountRemaining = makerAmountRemaining - parameters.amountOutUsed;
 
         self.takerAmountRemaining = self.takerAmountRemaining + (parameters.amountInUsed).toUint128();
-
-        // the fees actually paid by the taker to the maker
-        parameters.takerFeeForMakerAmountUsed = Math
-            .mulDiv(parameters.amountOutUsed, takerFeeForMakerAmount, amountOut)
-            .toUint128();
-        unchecked {
-            parameters.takerFeeForMakerAmountRemaining = takerFeeForMakerAmount - parameters.takerFeeForMakerAmountUsed;
-        }
 
         self.takerFeeAmountRemaining = self.takerFeeAmountRemaining + parameters.takerFeeForMakerAmountUsed;
     }
