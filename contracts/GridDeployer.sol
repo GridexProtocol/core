@@ -9,8 +9,16 @@ contract GridDeployer is IGridDeployer {
     bytes public override gridCreationCode;
     Parameters public override parameters;
 
-    function _changeGridCreationCode(bytes memory creationCode) internal {
-        gridCreationCode = creationCode;
+    /// @dev Split the creationCode of the Grid contract into two parts, so that the Gas Limit of particular networks can be met when deploying.
+    /// @param _gridPrefixCreationCode This parameter is the first half of the creationCode of the Grid contract.
+    function _setGridPrefixCreationCode(bytes memory _gridPrefixCreationCode) internal {
+        gridCreationCode = _gridPrefixCreationCode;
+    }
+
+    /// @dev Split the creationCode of the Grid contract into two parts, so that the Gas Limit of particular networks can be met when deploying.
+    /// @param _gridSuffixCreationCode This parameter is the second half of the creationCode of the Grid contract.
+    function _concatGridSuffixCreationCode(bytes memory _gridSuffixCreationCode) internal {
+        gridCreationCode = bytes.concat(gridCreationCode, _gridSuffixCreationCode);
     }
 
     /// @dev Deploys a grid with desired parameters and clears these parameters after the deployment is complete

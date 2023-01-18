@@ -2,12 +2,13 @@
 pragma solidity ^0.8.8;
 
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/IGridFactory.sol";
 import "./GridDeployer.sol";
 import "./PriceOracle.sol";
 
 /// @title The implementation of a Gridex grid factory
-contract GridFactory is IGridFactory, Context, GridDeployer {
+contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
     int24 constant ALLOW_MAX_FEE = 1e4;
 
     address public immutable override priceOracle;
@@ -15,7 +16,7 @@ contract GridFactory is IGridFactory, Context, GridDeployer {
     mapping(int24 => ResolutionConfig) public override resolutions;
     mapping(address => mapping(address => mapping(int24 => address))) public override grids;
 
-    constructor(address _weth9, bytes memory _gridCreationCode) {
+    constructor(address _weth9, bytes memory _gridPrefixCreationCode) {
         // GF_NC: not contract
         require(Address.isContract(_weth9), "GF_NC");
 
@@ -24,7 +25,7 @@ contract GridFactory is IGridFactory, Context, GridDeployer {
 
         _enableResolutions();
 
-        _changeGridCreationCode(_gridCreationCode);
+        _setGridPrefixCreationCode(_gridPrefixCreationCode);
     }
 
     function _enableResolutions() internal {
@@ -58,5 +59,11 @@ contract GridFactory is IGridFactory, Context, GridDeployer {
         grids[tokenA][tokenB][resolution] = grid;
         grids[tokenB][tokenA][resolution] = grid;
         emit GridCreated(token0, token1, resolution, grid);
+    }
+
+    /// @inheritdoc IGridFactory
+    function concatGridSuffixCreationCode(bytes memory gridSuffixCreationCode) external override onlyOwner {
+        _concatGridSuffixCreationCode(gridSuffixCreationCode);
+        renounceOwnership();
     }
 }
