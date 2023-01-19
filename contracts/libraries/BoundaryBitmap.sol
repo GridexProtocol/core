@@ -122,7 +122,7 @@ library BoundaryBitmap {
             // Begin from the word of the next boundary, since the current boundary state is immaterial
             (int16 wordPos, uint8 bitPos) = position(compressed + 1);
             // all the 1s at or to the left of the bitPos
-            uint256 mask = ~((1 << bitPos) - 1);
+            uint256 mask = ~uint256(0) << bitPos;
             uint256 masked = self[wordPos] & mask;
 
             // If no initialized boundaries exist to the left of the current boundary,

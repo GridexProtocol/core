@@ -12,7 +12,7 @@ import {computeAddress, sortedToken} from "./shared/GridAddress";
 import {expect} from "./shared/expect";
 import {ERC20, GridTestHelper} from "../typechain-types";
 
-describe("Oracle", () => {
+describe("PriceOracle", () => {
     async function deployFixture() {
         const weth9Address = (await deployWETH()).address;
         const {gridFactory} = await deployGridFactory(weth9Address);
