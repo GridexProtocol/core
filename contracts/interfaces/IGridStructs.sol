@@ -12,13 +12,13 @@ interface IGridStructs {
     }
 
     struct Boundary {
-        uint256 bundle0Id;
-        uint256 bundle1Id;
+        uint64 bundle0Id;
+        uint64 bundle1Id;
         uint128 makerAmountRemaining;
     }
 
     struct Order {
-        uint256 bundleId;
+        uint64 bundleId;
         address owner;
         uint128 amount;
     }

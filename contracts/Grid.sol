@@ -52,8 +52,8 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     uint256 private _orderId;
     mapping(uint256 => Order) public override orders;
 
-    uint256 private _bundleId;
-    mapping(uint256 => Bundle) public override bundles;
+    uint64 private _bundleId;
+    mapping(uint64 => Bundle) public override bundles;
 
     mapping(address => TokensOwed) public override tokensOweds;
 
@@ -152,7 +152,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         // updates the boundary
         Boundary storage boundary = _boundaryAt(boundaryLower, zero);
         Bundle storage bundle;
-        uint256 bundleId = boundary.bundle1Id;
+        uint64 bundleId = boundary.bundle1Id;
         // 1. If bundle1 has been initialized, add the order to bundle1 directly
         // 2. If bundle0 is not initialized, add the order to bundle0 after initialization
         // 3. If bundle0 has been initialized, and bundle0 has been used,
@@ -161,7 +161,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             bundle = bundles[bundleId];
             bundle.addLiquidity(amount);
         } else {
-            uint256 bundle0Id = boundary.bundle0Id;
+            uint64 bundle0Id = boundary.bundle0Id;
             if (bundle0Id == 0) {
                 // initializes new bundle
                 (bundleId, bundle) = _nextBundle(boundaryLower, zero);
@@ -667,12 +667,12 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     }
 
     /// @dev Returns the next bundle id
-    function _nextBundleId() private returns (uint256 bundleId) {
+    function _nextBundleId() private returns (uint64 bundleId) {
         bundleId = ++_bundleId;
     }
 
     /// @dev Creates and returns the next bundle and its corresponding id
-    function _nextBundle(int24 boundaryLower, bool zero) private returns (uint256 bundleId, Bundle storage bundle) {
+    function _nextBundle(int24 boundaryLower, bool zero) private returns (uint64 bundleId, Bundle storage bundle) {
         bundleId = _nextBundleId();
         bundle = bundles[bundleId];
         bundle.boundaryLower = boundaryLower;
