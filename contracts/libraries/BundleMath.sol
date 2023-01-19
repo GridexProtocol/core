@@ -84,7 +84,7 @@ library BundleMath {
     /// @param self The bundle to be updated
     /// @param makerAmountRaw The amount of liquidity added by the maker when placing an order
     /// @return makerAmountOut The amount of token0 or token1 that the maker will receive
-    /// @return takerAmountOut The amount of token0 or token1 that the maker will receive
+    /// @return takerAmountOut The amount of token1 or token0 that the maker will receive
     /// @return takerFeeAmountOut The amount of fees that the maker will receive
     /// @return makerAmountTotalNew The remaining amount of liquidity added by the maker
     function removeLiquidity(
