@@ -11,7 +11,7 @@ library BoundaryBitmap {
     /// @return bitPos The bit position in the word where the flag is stored
     function position(int24 boundary) internal pure returns (int16 wordPos, uint8 bitPos) {
         wordPos = int16(boundary >> 8);
-        bitPos = uint8(uint24(boundary % 256));
+        bitPos = uint8(uint24(boundary));
     }
 
     /// @notice Flips the boolean value of the initialization state of the given boundary
