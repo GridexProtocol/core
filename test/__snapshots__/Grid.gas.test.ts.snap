@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Grid #createGrid 1`] = `6677757`;
+exports[`Grid #createGrid 1`] = `6670986`;
 
 exports[`Grid #initialize 1`] = `96805`;
 
@@ -24,7 +24,7 @@ exports[`Grid #placeMakerOrder ETH 4`] = `129467`;
 
 exports[`Grid #placeMakerOrder ETH 5`] = `129467`;
 
-exports[`Grid #swap exactInput ERC20 1`] = `186949`;
+exports[`Grid #swap exactInput ERC20 1`] = `186807`;
 
 exports[`Grid #swap exactInput ERC20 2`] = `99166`;
 
@@ -48,7 +48,7 @@ exports[`Grid #swap exactInput ETH 5`] = `129382`;
 
 exports[`Grid #swap exactInput ETH 6`] = `117125`;
 
-exports[`Grid #swap exactOutput ERC20 1`] = `187260`;
+exports[`Grid #swap exactOutput ERC20 1`] = `187118`;
 
 exports[`Grid #swap exactOutput ERC20 2`] = `99468`;
 
