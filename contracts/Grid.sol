@@ -368,7 +368,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         state.amountOutputCalculated = state.amountOutputCalculated + step.amountOut;
         state.amountSpecifiedRemaining = state.amountSpecifiedRemaining < 0
             ? state.amountSpecifiedRemaining + int256(uint256(step.amountOut))
-            : state.amountSpecifiedRemaining - int256(step.amountIn) - int256(uint256(step.feeAmount));
+            : state.amountSpecifiedRemaining - step.amountIn.toInt256() - int256(uint256(step.feeAmount));
 
         // calculates maker and protocol fees
         (uint128 takerFeeForMakerAmount, uint128 takerFeeForProtocolAmount) = FeeMath.computeFees(
