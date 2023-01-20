@@ -38,24 +38,28 @@ library SwapMath {
         uint128 makerAmount,
         int24 takerFeePips
     ) internal pure returns (ComputeSwapStep memory step) {
-        return
-            amountRemaining > 0
-                ? computeSwapStepForExactIn(
+        if (amountRemaining > 0) {
+            return
+                computeSwapStepForExactIn(
                     priceCurrentX96,
                     boundaryPriceX96,
                     priceLimitX96,
                     uint256(amountRemaining),
                     makerAmount,
                     takerFeePips
-                )
-                : computeSwapStepForExactOut(
+                );
+        } else {
+            uint256 absAmountRemaining = uint256(-amountRemaining);
+            return
+                computeSwapStepForExactOut(
                     priceCurrentX96,
                     boundaryPriceX96,
                     priceLimitX96,
-                    uint256(-amountRemaining) > makerAmount ? makerAmount : uint128(uint256(-amountRemaining)),
+                    absAmountRemaining > makerAmount ? makerAmount : uint128(absAmountRemaining),
                     makerAmount,
                     takerFeePips
                 );
+        }
     }
 
     function computeSwapStepForExactIn(
