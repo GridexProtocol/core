@@ -49,7 +49,10 @@ library SwapMath {
                     takerFeePips
                 );
         } else {
-            uint256 absAmountRemaining = uint256(-amountRemaining);
+            uint256 absAmountRemaining;
+            unchecked {
+                absAmountRemaining = uint256(-amountRemaining);
+            }
             return
                 computeSwapStepForExactOut(
                     priceCurrentX96,
