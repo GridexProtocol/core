@@ -82,27 +82,32 @@ library SwapMath {
                     makerAmount,
                     takerFeePips
                 );
+        } else {
+            step.amountOut = _computeAmountOutForPriceLimit(
+                priceCurrentX96,
+                boundaryPriceX96,
+                priceLimitX96,
+                makerAmount
+            );
+
+            step = _computeSwapStepForExactOut(
+                priceCurrentX96,
+                boundaryPriceX96,
+                step.amountOut,
+                makerAmount,
+                takerFeePips
+            );
+            return
+                step.amountIn + step.feeAmount > takerAmountInRemaining // the remaining amount in is not enough to reach the limit price
+                    ? _computeSwapStepForExactIn(
+                        priceCurrentX96,
+                        boundaryPriceX96,
+                        takerAmountInRemaining,
+                        makerAmount,
+                        takerFeePips
+                    )
+                    : step;
         }
-
-        step.amountOut = _computeAmountOutForPriceLimit(priceCurrentX96, boundaryPriceX96, priceLimitX96, makerAmount);
-
-        step = _computeSwapStepForExactOut(
-            priceCurrentX96,
-            boundaryPriceX96,
-            step.amountOut,
-            makerAmount,
-            takerFeePips
-        );
-        return
-            step.amountIn + step.feeAmount > takerAmountInRemaining // the remaining amount in is not enough to reach the limit price
-                ? _computeSwapStepForExactIn(
-                    priceCurrentX96,
-                    boundaryPriceX96,
-                    takerAmountInRemaining,
-                    makerAmount,
-                    takerFeePips
-                )
-                : step;
     }
 
     function _computeSwapStepForExactIn(
