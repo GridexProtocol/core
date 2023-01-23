@@ -69,7 +69,7 @@ library BoundaryMath {
             // due to out boundary input limitations, we then proceed to downcast as the
             // result will always fit within 160 bits.
             // we round up in the division so that getBoundaryAtPriceX96 of the output price is always consistent
-            priceX96 = uint160((ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1));
+            priceX96 = uint160((ratio + 0xFFFFFFFF) >> 32);
         }
     }
 
