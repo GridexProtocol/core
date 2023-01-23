@@ -231,9 +231,7 @@ library BoundaryMath {
     /// @return boundaryLower The lower boundary for the given boundary and resolution
     function getBoundaryLowerAtBoundary(int24 boundary, int24 resolution) internal pure returns (int24 boundaryLower) {
         unchecked {
-            int24 remainder = boundary % resolution;
-            boundaryLower = boundary - remainder;
-            boundaryLower = remainder >= 0 ? boundaryLower : boundaryLower - resolution;
+            return boundary - (((boundary % resolution) + resolution) % resolution);
         }
     }
 

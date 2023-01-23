@@ -87,42 +87,42 @@ Object {
 exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = -527400, resolution = 1 1`] = `
 Object {
   "boundaryLower": -527400,
-  "gasUsed": 163,
+  "gasUsed": 155,
 }
 `;
 
 exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = 0, resolution = 1 1`] = `
 Object {
   "boundaryLower": 0,
-  "gasUsed": 163,
+  "gasUsed": 155,
 }
 `;
 
 exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = 3, resolution = 1 1`] = `
 Object {
   "boundaryLower": 3,
-  "gasUsed": 163,
+  "gasUsed": 155,
 }
 `;
 
 exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = 3, resolution = 5 1`] = `
 Object {
   "boundaryLower": 0,
-  "gasUsed": 163,
+  "gasUsed": 155,
 }
 `;
 
 exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = 3, resolution = 30 1`] = `
 Object {
   "boundaryLower": 0,
-  "gasUsed": 163,
+  "gasUsed": 155,
 }
 `;
 
 exports[`BoundaryMath #getBoundaryLowerAtBoundary boundary = 443635, resolution = 1 1`] = `
 Object {
   "boundaryLower": 443635,
-  "gasUsed": 163,
+  "gasUsed": 155,
 }
 `;
 
