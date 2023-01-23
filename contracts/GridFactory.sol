@@ -9,8 +9,6 @@ import "./PriceOracle.sol";
 
 /// @title The implementation of a Gridex grid factory
 contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
-    int24 constant ALLOW_MAX_FEE = 1e4;
-
     address public immutable override priceOracle;
     address public immutable weth9;
     mapping(int24 => ResolutionConfig) public override resolutions;
