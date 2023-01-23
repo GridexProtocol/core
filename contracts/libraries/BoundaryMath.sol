@@ -38,7 +38,7 @@ library BoundaryMath {
     /// @return priceX96 The price at the boundary, as a Q64.96
     function getPriceX96AtBoundary(int24 boundary) internal pure returns (uint160 priceX96) {
         unchecked {
-            uint256 absBoundary = boundary < 0 ? uint256(-int256(boundary)) : uint256(int256(boundary));
+            uint256 absBoundary = boundary < 0 ? uint256(-int256(boundary)) : uint24(boundary);
 
             uint256 ratio = absBoundary & 0x1 != 0
                 ? 0xfff97272373d413259a46990580e213a
