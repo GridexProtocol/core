@@ -166,7 +166,9 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
                 // initializes new bundle
                 (bundleId, bundle) = _nextBundle(boundaryLower, zero);
                 boundary.bundle0Id = bundleId;
-                bundle.addLiquidityWithAmount(0, 0, amount);
+
+                bundle.makerAmountTotal = amount;
+                bundle.makerAmountRemaining = amount;
             } else {
                 bundleId = bundle0Id;
                 bundle = bundles[bundleId];
@@ -179,10 +181,11 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
                     (bundleId, bundle) = _nextBundle(boundaryLower, zero);
                     boundary.bundle1Id = bundleId;
 
-                    makerAmountTotal = 0;
-                    makerAmountRemaining = 0;
+                    bundle.makerAmountTotal = amount;
+                    bundle.makerAmountRemaining = amount;
+                } else {
+                    bundle.addLiquidityWithAmount(makerAmountTotal, makerAmountRemaining, amount);
                 }
-                bundle.addLiquidityWithAmount(makerAmountTotal, makerAmountRemaining, amount);
             }
         }
 
