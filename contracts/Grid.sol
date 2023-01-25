@@ -143,8 +143,8 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         require(amount > 0, "G_OAZ");
         // G_IBL: invalid boundary lower
         require(
-            BoundaryMath.isInRange(boundaryLower) &&
-                BoundaryMath.isInRange(boundaryLower + resolution) &&
+            boundaryLower >= BoundaryMath.MIN_BOUNDARY &&
+                boundaryLower + resolution <= BoundaryMath.MAX_BOUNDARY &&
                 BoundaryMath.isValidBoundary(boundaryLower, resolution),
             "G_IBL"
         );

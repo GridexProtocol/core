@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 library BoundaryMath {
-    int24 internal constant MIN_BOUNDARY = -527400;
-    int24 internal constant MAX_BOUNDARY = 443635;
+    int24 public constant MIN_BOUNDARY = -527400;
+    int24 public constant MAX_BOUNDARY = 443635;
 
     /// @dev The minimum value that can be returned from #getPriceX96AtBoundary. Equivalent to getPriceX96AtBoundary(MIN_BOUNDARY)
     uint160 internal constant MIN_RATIO = 989314;
