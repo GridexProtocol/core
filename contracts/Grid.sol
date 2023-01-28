@@ -562,22 +562,21 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
 
     function _collect(address recipient, uint128 amount0, uint128 amount1, bool unwrapWETH9) private {
         if (amount0 > 0) {
-            if (unwrapWETH9 && token0 == weth9) {
-                IWETHMinimum(weth9).withdraw(amount0);
-                Address.sendValue(payable(recipient), amount0);
-            } else {
-                SafeERC20.safeTransfer(IERC20(token0), recipient, amount0);
-            }
+            _collectSingle(recipient, token0, amount0, unwrapWETH9);
         }
         if (amount1 > 0) {
-            if (unwrapWETH9 && token1 == weth9) {
-                IWETHMinimum(weth9).withdraw(amount1);
-                Address.sendValue(payable(recipient), amount1);
-            } else {
-                SafeERC20.safeTransfer(IERC20(token1), recipient, amount1);
-            }
+            _collectSingle(recipient, token1, amount1, unwrapWETH9);
         }
         emit Collect(_msgSender(), recipient, amount0, amount1);
+    }
+
+    function _collectSingle(address recipient, address token, uint128 amount, bool unwrapWETH9) private {
+        if (unwrapWETH9 && token == weth9) {
+            IWETHMinimum(token).withdraw(amount);
+            Address.sendValue(payable(recipient), amount);
+        } else {
+            SafeERC20.safeTransfer(IERC20(token), recipient, amount);
+        }
     }
 
     /// @inheritdoc IGrid
