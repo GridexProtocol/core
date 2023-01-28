@@ -46,7 +46,9 @@ library BundleMath {
         }
 
         // updates maker amount remaining
-        self.makerAmountRemaining = makerAmountRemaining - parameters.amountOutUsed;
+        unchecked {
+            self.makerAmountRemaining = makerAmountRemaining - parameters.amountOutUsed;
+        }
 
         self.takerAmountRemaining = self.takerAmountRemaining + (parameters.amountInUsed).toUint128();
 
@@ -104,10 +106,10 @@ library BundleMath {
         takerAmountOut = (makerAmountRaw * takerAmountRemaining) / makerAmountTotal;
         takerFeeAmountOut = (makerAmountRaw * takerFeeAmountRemaining) / makerAmountTotal;
 
-        makerAmountTotalNew = makerAmountTotal - makerAmountRaw;
-        self.makerAmountTotal = makerAmountTotalNew;
-
         unchecked {
+            makerAmountTotalNew = makerAmountTotal - makerAmountRaw;
+            self.makerAmountTotal = makerAmountTotalNew;
+
             self.makerAmountRemaining = makerAmountRemaining - makerAmountOut;
 
             self.takerAmountRemaining = takerAmountRemaining - takerAmountOut;
