@@ -149,6 +149,7 @@ interface IGrid {
     /// @notice Settle maker order and collect
     /// @param recipient The address to receive the output of the settlement
     /// @param orderId The unique identifier of the order
+    /// @param unwrapWETH9 Whether to unwrap WETH9 to ETH
     /// @return amount0 The amount of token0 that the maker received
     /// @return amount1 The amount of token1 that the maker received
     function settleMakerOrderAndCollect(
@@ -160,6 +161,7 @@ interface IGrid {
     /// @notice Settles maker orders and collects in a batch
     /// @param recipient The address to receive the output of the settlement
     /// @param orderIds The unique identifiers of the orders
+    /// @param unwrapWETH9 Whether to unwrap WETH9 to ETH
     /// @return amount0Total The total amount of token0 that the maker received
     /// @return amount1Total The total amount of token1 that the maker received
     function settleMakerOrderAndCollectInBatch(
