@@ -19,10 +19,9 @@ library FeeMath {
         int24 makerFeePips
     ) internal pure returns (uint128 takerFeeForMakerAmount, uint128 takerFeeForProtocolAmount) {
         uint24 makerFeePipsAbs = uint24(-makerFeePips);
-        takerFeeForMakerAmount = Math.mulDiv(makerFeePipsAbs, takerFeeAmount, uint24(takerFeePips)).toUint128();
+        takerFeeForMakerAmount = uint128(uint256(takerFeeAmount) * makerFeePipsAbs / uint24(takerFeePips));
         unchecked {
             takerFeeForProtocolAmount = takerFeeAmount - takerFeeForMakerAmount;
         }
-        return (takerFeeForMakerAmount, takerFeeForProtocolAmount);
     }
 }
