@@ -388,7 +388,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             );
             emit ChangeBundleForSwap(
                 boundary.bundle0Id,
-                SafeCast.toInt256(parameters.amountOutUsed) * -1,
+                -int256(uint256(parameters.amountOutUsed)),
                 parameters.amountInUsed,
                 parameters.takerFeeForMakerAmountUsed
             );
@@ -406,7 +406,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
                     );
                     emit ChangeBundleForSwap(
                         boundary.bundle0Id,
-                        SafeCast.toInt256(parameters.amountOutUsed) * -1,
+                        -int256(uint256(parameters.amountOutUsed)),
                         parameters.amountInUsed,
                         parameters.takerFeeForMakerAmountUsed
                     );
@@ -449,8 +449,8 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         address tokenToPay;
         address tokenToReceive;
         (tokenToPay, tokenToReceive, amount0, amount1) = state.zeroForOne
-            ? (token1, token0, SafeCast.toInt256(amountInputTotal), SafeCast.toInt256(amountOutputTotal) * -1)
-            : (token0, token1, SafeCast.toInt256(amountOutputTotal) * -1, SafeCast.toInt256(amountInputTotal));
+            ? (token1, token0, SafeCast.toInt256(amountInputTotal), -SafeCast.toInt256(amountOutputTotal))
+            : (token0, token1, -SafeCast.toInt256(amountOutputTotal), SafeCast.toInt256(amountInputTotal));
 
         // pays token to recipient
         SafeERC20.safeTransfer(IERC20(tokenToPay), recipient, amountOutputTotal);
@@ -537,8 +537,8 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
 
         emit ChangeBundleForSettleOrder(
             order.bundleId,
-            int256(uint256(order.amount)) * -1,
-            int256(uint256(makerAmountOut)) * -1
+            -int256(uint256(order.amount)),
+            -int256(uint256(makerAmountOut))
         );
 
         // removes liquidity from boundary
