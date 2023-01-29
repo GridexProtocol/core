@@ -8,7 +8,7 @@ import {ethers} from "hardhat";
 describe("GridFactory", () => {
     async function deployFixture() {
         const weth = await deployWETH();
-        const  {gridFactory} =  await deployGridFactory(weth.address);
+        const {gridFactory} = await deployGridFactory(weth.address);
         return {weth, gridFactory};
     }
 
@@ -43,9 +43,8 @@ describe("GridFactory", () => {
             tests.forEach(async (test) => {
                 it(test.name, async () => {
                     const {gridFactory} = await loadFixture(deployFixture);
-                    const {takerFee, makerFee} = await gridFactory.resolutions(test.resolution);
+                    const takerFee = await gridFactory.resolutions(test.resolution);
                     expect(takerFee / 1e6).to.equal(test.expectTakerFee);
-                    expect(makerFee / 1e6).to.equal(test.expectMakerFee);
                 });
             });
         });
@@ -83,9 +82,7 @@ describe("GridFactory", () => {
 
         it("should reverted with the right error if resolution is not enabled", async () => {
             const {gridFactory, weth} = await loadFixture(deployFixture);
-            await expect(gridFactory.createGrid(gridFactory.address, weth.address, 1000)).to.be.revertedWith(
-                "GF_RNE"
-            );
+            await expect(gridFactory.createGrid(gridFactory.address, weth.address, 1000)).to.be.revertedWith("GF_RNE");
         });
 
         describe("should success", async () => {
@@ -131,9 +128,9 @@ describe("GridFactory", () => {
                 "GridCreated"
             );
 
-            await expect(
-                gridFactory.createGrid(gridFactory.address, weth.address, Resolution.HIGH)
-            ).to.be.revertedWith("GF_PAE");
+            await expect(gridFactory.createGrid(gridFactory.address, weth.address, Resolution.HIGH)).to.be.revertedWith(
+                "GF_PAE"
+            );
         });
     });
 });

@@ -19,7 +19,6 @@ import "./interfaces/IGridDeployer.sol";
 import "./interfaces/IPriceOracle.sol";
 import "./libraries/BoundaryMath.sol";
 import "./libraries/BoundaryBitmap.sol";
-import "./libraries/FeeMath.sol";
 import "./libraries/BundleMath.sol";
 import "./libraries/Uint128Math.sol";
 import "./libraries/Uint160Math.sol";
@@ -39,10 +38,8 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     address private immutable priceOracle;
 
     int24 public immutable takerFee;
-    int24 public immutable makerFee;
 
     Slot0 public override slot0;
-    mapping(address => TokensOwed) public override channelFees;
 
     mapping(int24 => Boundary) public override boundaries0;
     mapping(int24 => Boundary) public override boundaries1;
@@ -61,7 +58,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     receive() external payable {}
 
     constructor() {
-        (token0, token1, resolution, takerFee, makerFee, priceOracle, weth9) = IGridDeployer(_msgSender()).parameters();
+        (token0, token1, resolution, takerFee, priceOracle, weth9) = IGridDeployer(_msgSender()).parameters();
     }
 
     modifier lock() {
@@ -216,7 +213,6 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     /// @inheritdoc IGrid
     function swap(
         address recipient,
-        address channel,
         bool zeroForOne,
         int256 amountSpecified,
         uint160 priceLimitX96,
@@ -246,7 +242,6 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             boundaryLower: BoundaryMath.getBoundaryLowerAtBoundary(slot0Cache.boundary, resolution),
             initializedBoundaryLowerPriceX96: 0,
             initializedBoundaryUpperPriceX96: 0,
-            feeProtocol: 0,
             stopSwap: false
         });
 
@@ -289,17 +284,6 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             }
 
             (slot0.priceX96, slot0.boundary) = (state.priceX96, state.boundary);
-        }
-
-        // updates the protocol fee
-        // In the interest of gas-efficiency, overflow is permitted here, requiring us to
-        // only collect the protocol fee prior to overflow
-        unchecked {
-            if (state.zeroForOne) {
-                channelFees[channel].token0 = channelFees[channel].token0 + state.feeProtocol;
-            } else {
-                channelFees[channel].token1 = channelFees[channel].token1 + state.feeProtocol;
-            }
         }
 
         (amount0, amount1) = _processTransferForSwap(state, recipient, data);
@@ -373,18 +357,12 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             ? state.amountSpecifiedRemaining + int256(uint256(step.amountOut))
             : state.amountSpecifiedRemaining - step.amountIn.toInt256() - int256(uint256(step.feeAmount));
 
-        // calculates maker and protocol fees
-        (uint128 takerFeeForMakerAmount, uint128 takerFeeForProtocolAmount) = FeeMath.computeFees(
-            step.feeAmount,
-            takerFee,
-            makerFee
-        );
         {
             Bundle storage bundle0 = bundles[boundary.bundle0Id];
             UpdateBundleForTakerParameters memory parameters = bundle0.updateForTaker(
                 step.amountIn,
                 step.amountOut,
-                takerFeeForMakerAmount
+                step.feeAmount
             );
             emit ChangeBundleForSwap(
                 boundary.bundle0Id,
@@ -432,9 +410,6 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         // otherwise swapping stops and the boundary is recomputed
         state.boundary = boundaryNext;
         state.boundaryLower = boundaryNext;
-        unchecked {
-            state.feeProtocol = state.feeProtocol + takerFeeForProtocolAmount;
-        }
 
         return false;
     }
@@ -618,17 +593,6 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         (amount0, amount1) = _collectOwed(tokensOweds[_msgSender()], recipient, amount0Requested, amount1Requested);
 
         emit Collect(_msgSender(), recipient, amount0, amount1);
-    }
-
-    /// @inheritdoc IGrid
-    function collectChannelFees(
-        address recipient,
-        uint128 amount0Requested,
-        uint128 amount1Requested
-    ) external override lock returns (uint128 amount0, uint128 amount1) {
-        (amount0, amount1) = _collectOwed(channelFees[_msgSender()], recipient, amount0Requested, amount1Requested);
-
-        emit CollectFeeChannel(_msgSender(), recipient, amount0, amount1);
     }
 
     function _collectOwed(

@@ -27,7 +27,6 @@ import {
 import {computeAddress, sortedToken} from "./shared/GridAddress";
 import {
     BoundaryMathTest,
-    FeeMathTest,
     FlashTest,
     Grid,
     GridFactory,
@@ -37,7 +36,6 @@ import {
     SwapMathTest,
 } from "../typechain-types";
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {mulDiv, Rounding} from "./shared/math";
 import {IGridParameters} from "../typechain-types/contracts/interfaces/IGrid";
 
 describe("Grid", () => {
@@ -66,10 +64,6 @@ describe("Grid", () => {
 
         const swapMath = await deploySwapMath();
 
-        const feeMathFactory = await ethers.getContractFactory("FeeMathTest");
-        const feeMath = await feeMathFactory.deploy();
-        await feeMath.deployed();
-
         return {
             signer,
             otherAccount,
@@ -77,14 +71,13 @@ describe("Grid", () => {
             gridFactory,
             gridTestHelper,
             swapMath,
-            feeMath,
             weth,
             usdc,
         };
     }
 
     async function deployAndCreateGridFixture() {
-        const {signer, otherAccount, boundaryMath, gridFactory, gridTestHelper, swapMath, feeMath, weth, usdc} =
+        const {signer, otherAccount, boundaryMath, gridFactory, gridTestHelper, swapMath, weth, usdc} =
             await deployBaseFixture();
         await gridFactory.createGrid(weth.address, usdc.address, Resolution.MEDIUM);
 
@@ -106,7 +99,6 @@ describe("Grid", () => {
             gridFactory,
             gridTestHelper,
             swapMath,
-            feeMath,
             grid,
             weth,
             usdc,
@@ -114,7 +106,7 @@ describe("Grid", () => {
     }
 
     async function createGridAndInitializeGridFixture() {
-        const {signer, otherAccount, boundaryMath, gridFactory, gridTestHelper, swapMath, feeMath, grid, weth, usdc} =
+        const {signer, otherAccount, boundaryMath, gridFactory, gridTestHelper, swapMath, grid, weth, usdc} =
             await deployAndCreateGridFixture();
         await grid.initialize(encodePriceWithBaseAndQuote(weth.address, 1, usdc.address, 1644));
         return {
@@ -124,7 +116,6 @@ describe("Grid", () => {
             gridFactory,
             gridTestHelper,
             swapMath,
-            feeMath,
             grid,
             weth,
             usdc,
@@ -194,16 +185,12 @@ describe("Grid", () => {
     describe("#swap", () => {
         it("should revert with right error if not initialized", async () => {
             const {signer, grid} = await loadFixture(deployAndCreateGridFixture);
-            await expect(grid.swap(ethers.constants.AddressZero, signer.address, false, 1n, 0, [])).to.revertedWith(
-                "G_GL"
-            );
+            await expect(grid.swap(ethers.constants.AddressZero, false, 1n, 0, [])).to.revertedWith("G_GL");
         });
 
         it("should revert with right error if amount specified is zero", async () => {
             const {signer, grid} = await loadFixture(createGridAndInitializeGridFixture);
-            await expect(grid.swap(ethers.constants.AddressZero, signer.address, true, 0, 0, [])).to.revertedWith(
-                "G_ASZ"
-            );
+            await expect(grid.swap(ethers.constants.AddressZero, true, 0, 0, [])).to.revertedWith("G_ASZ");
         });
 
         it("should success if exact in too small", async () => {
@@ -238,7 +225,6 @@ describe("Grid", () => {
                     amountSpecified: -1n,
                     priceLimitX96: MAX_RATIO,
                     payer: swapTest.address,
-                    channel: otherAccount.address,
                 })
             )
                 .to.emit(grid, "Swap")
@@ -275,7 +261,6 @@ describe("Grid", () => {
                         amountIn: 10n ** 18n * 2n,
                         amountOutMinimum: 10n ** 18n,
                         priceLimitX96: 79038250506172963152230696873n,
-                        channel: signer.address,
                     },
                     {
                         value: token0.toLowerCase() == weth.address.toLowerCase() ? 10n ** 18n * 2n : 0n,
@@ -309,7 +294,6 @@ describe("Grid", () => {
                         amountOut: 1,
                         amountInMaximum: 1,
                         priceLimitX96: encodePriceWithBaseAndQuote(weth.address, 1, usdc.address, 1644).add(1),
-                        channel: signer.address,
                     })
                 ).to.revertedWith("G_PLO");
             });
@@ -327,7 +311,6 @@ describe("Grid", () => {
                         amountOut: 1,
                         amountInMaximum: 1,
                         priceLimitX96: encodePriceWithBaseAndQuote(weth.address, 1, usdc.address, 1644).sub(1),
-                        channel: signer.address,
                     })
                 ).to.revertedWith("G_PLO");
             });
@@ -348,7 +331,6 @@ describe("Grid", () => {
                         amountOut: 1,
                         amountInMaximum: 1,
                         priceLimitX96: encodePriceWithBaseAndQuote(weth.address, 1, usdc.address, 1644).sub(1),
-                        channel: signer.address,
                     })
                 ).to.revertedWith("amount0Delta or amount1Delta must be positive");
             });
@@ -367,7 +349,6 @@ describe("Grid", () => {
                         amountOut: 1,
                         amountInMaximum: 1,
                         priceLimitX96: encodePriceWithBaseAndQuote(weth.address, 1, usdc.address, 1644).add(1),
-                        channel: signer.address,
                     })
                 ).to.revertedWith("amount0Delta or amount1Delta must be positive");
             });
@@ -376,8 +357,9 @@ describe("Grid", () => {
         describe("initialize only one boundary", () => {
             describe("zeroForOne == true", () => {
                 it("fully filled", async () => {
-                    const {signer, gridTestHelper, swapMath, boundaryMath, feeMath, grid, weth, usdc} =
-                        await loadFixture(createGridAndInitializeGridFixture);
+                    const {signer, gridTestHelper, swapMath, boundaryMath, grid, weth, usdc} = await loadFixture(
+                        createGridAndInitializeGridFixture
+                    );
 
                     const {boundary: boundaryBefore} = await grid.slot0();
                     const boundaryLowerBefore = await formatBoundaryToBoundaryLower(boundaryBefore, Resolution.MEDIUM);
@@ -415,7 +397,6 @@ describe("Grid", () => {
                         1000,
                         500
                     );
-                    const {takerFeeForProtocolAmount} = await feeMath.computeFees(feeAmount, 500, -400);
                     const amount0OrAmount1 = (amount: any) => {
                         if (BigNumber.from(-1000).eq(amount)) {
                             return true;
@@ -432,7 +413,6 @@ describe("Grid", () => {
                                 amountOut: 1000,
                                 amountInMaximum: amountIn.add(feeAmount),
                                 priceLimitX96: 0,
-                                channel: signer.address,
                             },
                             {
                                 value: token0.toLowerCase() == weth.address.toLowerCase() ? amountIn.add(feeAmount) : 0,
@@ -440,7 +420,7 @@ describe("Grid", () => {
                         )
                     )
                         .to.emit(grid, "ChangeBundleForSwap")
-                        .withArgs(1, -1000, amountIn, feeAmount.sub(takerFeeForProtocolAmount))
+                        .withArgs(1, -1000, amountIn, feeAmount)
                         .to.emit(grid, "Swap")
                         .withArgs(
                             gridTestHelper.address,
@@ -457,12 +437,6 @@ describe("Grid", () => {
                         expect(boundaryAfter).to.equal(await boundaryMath.getBoundaryAtPriceX96(priceX96After));
                     }
 
-                    // check protocol fees and channel fees
-                    {
-                        const {token0: channelAmount0, token1: channelAmount1} = await grid.channelFees(signer.address);
-                        expect(channelAmount0).to.equal(takerFeeForProtocolAmount);
-                        expect(channelAmount1).to.equal(0);
-                    }
                     // check bundle
                     {
                         const {makerAmountTotal, makerAmountRemaining, takerAmountRemaining, takerFeeAmountRemaining} =
@@ -470,7 +444,7 @@ describe("Grid", () => {
                         expect(makerAmountTotal).to.equal(1000);
                         expect(makerAmountRemaining).to.equal(0);
                         expect(takerAmountRemaining).to.equal(amountIn);
-                        expect(takerFeeAmountRemaining).to.equal(feeAmount.sub(takerFeeForProtocolAmount));
+                        expect(takerFeeAmountRemaining).to.equal(feeAmount);
                     }
                     // check boundary
                     {
@@ -491,8 +465,9 @@ describe("Grid", () => {
                 });
 
                 it("partial filled", async () => {
-                    const {signer, gridTestHelper, swapMath, boundaryMath, feeMath, grid, weth, usdc} =
-                        await loadFixture(createGridAndInitializeGridFixture);
+                    const {signer, gridTestHelper, swapMath, boundaryMath, grid, weth, usdc} = await loadFixture(
+                        createGridAndInitializeGridFixture
+                    );
 
                     const {boundary: boundaryBefore} = await grid.slot0();
                     const boundaryLowerBefore = await formatBoundaryToBoundaryLower(boundaryBefore, Resolution.MEDIUM);
@@ -530,7 +505,6 @@ describe("Grid", () => {
                         1000,
                         500
                     );
-                    const {takerFeeForProtocolAmount} = await feeMath.computeFees(feeAmount, 500, -400);
                     const boundaryNextPromise = boundaryMath.getBoundaryAtPriceX96(priceNextX96);
 
                     const amount0OrAmount1 = (amount: any) => {
@@ -549,7 +523,6 @@ describe("Grid", () => {
                                 amountOut: 499,
                                 amountInMaximum: amountIn.add(feeAmount),
                                 priceLimitX96: 0,
-                                channel: signer.address,
                             },
                             {
                                 value: token0.toLowerCase() == weth.address.toLowerCase() ? amountIn.add(feeAmount) : 0,
@@ -557,7 +530,7 @@ describe("Grid", () => {
                         )
                     )
                         .to.emit(grid, "ChangeBundleForSwap")
-                        .withArgs(1, -499, amountIn, feeAmount.sub(takerFeeForProtocolAmount))
+                        .withArgs(1, -499, amountIn, feeAmount)
                         .to.emit(grid, "Swap")
                         .withArgs(
                             gridTestHelper.address,
@@ -574,12 +547,6 @@ describe("Grid", () => {
                         expect(boundaryAfter).to.equal(await boundaryNextPromise);
                     }
 
-                    // check protocol fees and channel fees
-                    {
-                        const {token0: channelAmount0, token1: channelAmount1} = await grid.channelFees(signer.address);
-                        expect(channelAmount0).to.equal(takerFeeForProtocolAmount);
-                        expect(channelAmount1).to.equal(0);
-                    }
                     // check bundle
                     {
                         const {makerAmountTotal, makerAmountRemaining, takerAmountRemaining, takerFeeAmountRemaining} =
@@ -587,7 +554,7 @@ describe("Grid", () => {
                         expect(makerAmountTotal).to.equal(1000);
                         expect(makerAmountRemaining).to.equal(1000 - 499);
                         expect(takerAmountRemaining).to.equal(amountIn);
-                        expect(takerFeeAmountRemaining).to.equal(feeAmount.sub(takerFeeForProtocolAmount));
+                        expect(takerFeeAmountRemaining).to.equal(feeAmount);
                     }
                     // check boundary
                     {
@@ -610,8 +577,9 @@ describe("Grid", () => {
 
             describe("zeroForOne == false", () => {
                 it("fully filled", async () => {
-                    const {signer, gridTestHelper, swapMath, boundaryMath, feeMath, grid, weth, usdc} =
-                        await loadFixture(createGridAndInitializeGridFixture);
+                    const {signer, gridTestHelper, swapMath, boundaryMath, grid, weth, usdc} = await loadFixture(
+                        createGridAndInitializeGridFixture
+                    );
 
                     const {boundary: boundaryBefore} = await grid.slot0();
                     const boundaryLowerBefore = await formatBoundaryToBoundaryLower(boundaryBefore, Resolution.MEDIUM);
@@ -652,7 +620,6 @@ describe("Grid", () => {
                         1000,
                         500
                     );
-                    const {takerFeeForProtocolAmount} = await feeMath.computeFees(feeAmount, 1000, -800);
                     const amount0OrAmount1 = (amount: any) => {
                         if (BigNumber.from(-1000).eq(amount)) {
                             return true;
@@ -669,7 +636,6 @@ describe("Grid", () => {
                                 amountOut: 1000,
                                 amountInMaximum: amountIn.add(feeAmount),
                                 priceLimitX96: 0,
-                                channel: signer.address,
                             },
                             {
                                 value: token0.toLowerCase() == weth.address.toLowerCase() ? 0 : amountIn.add(feeAmount),
@@ -677,7 +643,7 @@ describe("Grid", () => {
                         )
                     )
                         .to.emit(grid, "ChangeBundleForSwap")
-                        .withArgs(1, -1000, amountIn, feeAmount.sub(takerFeeForProtocolAmount))
+                        .withArgs(1, -1000, amountIn, feeAmount)
                         .to.emit(grid, "Swap")
                         .withArgs(
                             gridTestHelper.address,
@@ -694,12 +660,6 @@ describe("Grid", () => {
                         expect(boundaryAfter).to.equal(boundaryLowerBefore + Resolution.MEDIUM + Resolution.MEDIUM);
                     }
 
-                    // check protocol fees and channel fees
-                    {
-                        const {token0: channelAmount0, token1: channelAmount1} = await grid.channelFees(signer.address);
-                        expect(channelAmount0).to.equal(0);
-                        expect(channelAmount1).to.equal(takerFeeForProtocolAmount);
-                    }
                     // check bundle
                     {
                         const {makerAmountTotal, makerAmountRemaining, takerAmountRemaining, takerFeeAmountRemaining} =
@@ -707,7 +667,7 @@ describe("Grid", () => {
                         expect(makerAmountTotal).to.equal(1000);
                         expect(makerAmountRemaining).to.equal(0);
                         expect(takerAmountRemaining).to.equal(amountIn);
-                        expect(takerFeeAmountRemaining).to.equal(feeAmount.sub(takerFeeForProtocolAmount));
+                        expect(takerFeeAmountRemaining).to.equal(feeAmount);
                     }
                     // check boundary
                     {
@@ -737,7 +697,6 @@ describe("Grid", () => {
                     gridTestHelper: GridTestHelper;
                     usdc: IERC20;
                     weth: IWETHMinimum;
-                    feeMath: FeeMathTest;
                     grid: Grid;
                     swapMath: SwapMathTest;
                     boundaryMath: BoundaryMathTest;
@@ -857,23 +816,6 @@ describe("Grid", () => {
                             amountInTotal = amountIn1.add(amountIn2).add(amountIn3);
                             feeAmountTotal = feeAmount1.add(feeAmount2).add(feeAmount3);
 
-                            const {takerFeeForProtocolAmount: protocolAmount1} = await ctx.feeMath.computeFees(
-                                feeAmount1,
-                                500,
-                                -400
-                            );
-                            const {takerFeeForProtocolAmount: protocolAmount2} = await ctx.feeMath.computeFees(
-                                feeAmount2,
-                                500,
-                                -400
-                            );
-                            const {takerFeeForProtocolAmount: protocolAmount3} = await ctx.feeMath.computeFees(
-                                feeAmount3,
-                                500,
-                                -400
-                            );
-                            protocolAmountTotal = protocolAmount1.add(protocolAmount2).add(protocolAmount3);
-
                             const amount0OrAmount1 = (amount: any) => {
                                 if (BigNumber.from(-2500).eq(amount)) {
                                     return true;
@@ -890,7 +832,6 @@ describe("Grid", () => {
                                         amountOut: 2500,
                                         amountInMaximum: amountInTotal.add(feeAmountTotal),
                                         priceLimitX96: 0,
-                                        channel: ctx.signer.address,
                                     },
                                     {
                                         value:
@@ -910,11 +851,11 @@ describe("Grid", () => {
                                     await ctx.boundaryMath.getBoundaryAtPriceX96(priceX96After)
                                 )
                                 .to.emit(ctx.grid, "ChangeBundleForSwap")
-                                .withArgs(3, -1000, amountIn1, feeAmount1.sub(protocolAmount1))
+                                .withArgs(3, -1000, amountIn1, feeAmount1)
                                 .to.emit(ctx.grid, "ChangeBundleForSwap")
-                                .withArgs(2, -1000, amountIn2, feeAmount2.sub(protocolAmount2))
+                                .withArgs(2, -1000, amountIn2, feeAmount2)
                                 .to.emit(ctx.grid, "ChangeBundleForSwap")
-                                .withArgs(1, -500, amountIn3, feeAmount3.sub(protocolAmount3));
+                                .withArgs(1, -500, amountIn3, feeAmount3);
                         });
 
                         it("slot0 should be update", async () => {
@@ -923,14 +864,6 @@ describe("Grid", () => {
                             expect(priceX96).to.equal(priceX96After);
                             const boundaryAfter = await ctx.boundaryMath.getBoundaryAtPriceX96(priceX96After);
                             expect(boundary).to.equal(boundaryAfter);
-                        });
-
-                        it("protocol fee and channel fee should be update", async () => {
-                            const {token0: channelAmount0, token1: channelAmount1} = await ctx.grid.channelFees(
-                                ctx.signer.address
-                            );
-                            expect(channelAmount0).to.equal(protocolAmountTotal);
-                            expect(channelAmount1).to.equal(0);
                         });
 
                         it("grid balance", async () => {
@@ -1087,7 +1020,6 @@ describe("Grid", () => {
                                             amountOut: 100,
                                             amountInMaximum: amountIn.add(feeAmount),
                                             priceLimitX96: 0,
-                                            channel: ctx.signer.address,
                                         },
                                         {
                                             value:
@@ -1130,7 +1062,6 @@ describe("Grid", () => {
                 otherAccount: SignerWithAddress;
                 usdc: IERC20;
                 weth: IWETHMinimum;
-                feeMath: FeeMathTest;
                 grid: Grid;
                 swapMath: SwapMathTest;
                 boundaryMath: BoundaryMathTest;
@@ -1173,7 +1104,6 @@ describe("Grid", () => {
                             amountOut: 10n ** 18n / 2n,
                             amountInMaximum: 10n ** 18n,
                             priceLimitX96: 0,
-                            channel: ctx.signer.address,
                         },
                         {
                             value: token0.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n : 0n,
@@ -1214,7 +1144,6 @@ describe("Grid", () => {
                             amountOut: test.amountOut,
                             amountInMaximum: 10n ** 18n * 2n,
                             priceLimitX96: 0,
-                            channel: ctx.signer.address,
                         },
                         {
                             value: token0.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n * 2n : 0n,
@@ -1325,7 +1254,6 @@ describe("Grid", () => {
                             amountOut: 10n ** 18n,
                             amountInMaximum: 10n ** 18n * 2n,
                             priceLimitX96: 0n,
-                            channel: ctx.signer.address,
                         },
                         {
                             value: token1.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n * 2n : 0n,
@@ -1437,7 +1365,6 @@ describe("Grid", () => {
                                 amountOut: test.expectAmountOut,
                                 amountInMaximum: 10n ** 18n * 5n,
                                 priceLimitX96: 0n,
-                                channel: ctx.signer.address,
                             },
                             {
                                 value: tokenIn.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n * 5n : 0n,
@@ -1638,7 +1565,6 @@ describe("Grid", () => {
                                 amountOut: test.amountOut,
                                 amountInMaximum: 10n ** 18n * 5n,
                                 priceLimitX96: test.priceX96Limit,
-                                channel: ctx.signer.address,
                             },
                             {
                                 value: tokenIn.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n * 5n : 0n,
@@ -1668,7 +1594,6 @@ describe("Grid", () => {
             gridTestHelper: GridTestHelper;
             usdc: IERC20;
             weth: IWETHMinimum;
-            feeMath: FeeMathTest;
             grid: Grid;
             swapMath: SwapMathTest;
             boundaryMath: BoundaryMathTest;
@@ -1874,21 +1799,6 @@ describe("Grid", () => {
                     expect(await balanceOf(token1, recipient)).to.equal(test.amount1);
                 }
             });
-        });
-    });
-
-    describe("#collectChannelFees", () => {
-        it("should revert with right error if not initialized", async () => {
-            const {otherAccount, grid} = await deployAndCreateGridFixture();
-            await expect(grid.collectChannelFees(otherAccount.address, 0, 0)).to.be.revertedWith("G_GL");
-        });
-
-        it("event should be emitted", async () => {
-            const {signer, otherAccount, grid} = await deployAndCreateGridFixture();
-            await grid.initialize(RESOLUTION_X96);
-            await expect(grid.collectChannelFees(otherAccount.address, 0, 0))
-                .to.emit(grid, "CollectFeeChannel")
-                .withArgs(signer.address, otherAccount.address, 0n, 0n);
         });
     });
 
@@ -2420,7 +2330,6 @@ describe("Grid", () => {
                             amountOut: 500,
                             amountInMaximum: fullyAmountIn,
                             priceLimitX96: 0,
-                            channel: signer.address,
                         },
                         {
                             value: token0.toLowerCase() == weth.address.toLowerCase() ? 0 : fullyAmountIn,
@@ -2794,14 +2703,13 @@ describe("Grid", () => {
                         amountOut: 10n ** 18n / 2n,
                         amountInMaximum: 10n ** 18n * 2n,
                         priceLimitX96: 0n,
-                        channel: ctx.signer.address,
                     },
                     {value: 10n ** 18n * 2n}
                 );
 
                 await expect(ctx.grid.settleMakerOrder(3))
                     .to.emit(ctx.grid, "SettleMakerOrder")
-                    .withArgs(3, 10n ** 18n / 2n, 500375544257842741n, 1204514850771136n);
+                    .withArgs(3, 10n ** 18n / 2n, 500375544257842741n, 1505643563463920);
 
                 {
                     const {makerAmountTotal, makerAmountRemaining, takerAmountRemaining, takerFeeAmountRemaining} =
@@ -2826,7 +2734,6 @@ describe("Grid", () => {
                         amountOut: 10n ** 18n / 2n,
                         amountInMaximum: 10n ** 18n * 2n,
                         priceLimitX96: 0n,
-                        channel: ctx.signer.address,
                     },
                     {value: 10n ** 18n * 2n}
                 );
@@ -2867,7 +2774,6 @@ describe("Grid", () => {
                         amountOut: 10n ** 18n / 2n,
                         amountInMaximum: 10n ** 18n * 2n,
                         priceLimitX96: 0n,
-                        channel: ctx.signer.address,
                     },
                     {value: 10n ** 18n * 2n}
                 );

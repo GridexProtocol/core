@@ -11,7 +11,7 @@ import "./PriceOracle.sol";
 contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
     address public immutable override priceOracle;
     address public immutable weth9;
-    mapping(int24 => ResolutionConfig) public override resolutions;
+    mapping(int24 => int24) public override resolutions;
     /// @notice The first key and the second key are token addresses, and the third key is the resolution,
     /// and the value is the grid address
     /// @dev For tokenA/tokenB and the specified resolution, both the combination of tokenA/tokenB
@@ -31,14 +31,14 @@ contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
     }
 
     function _enableResolutions() internal {
-        resolutions[1] = ResolutionConfig({takerFee: 100, makerFee: -80});
-        emit ResolutionEnabled(1, 100, -80);
+        resolutions[1] = 100;
+        emit ResolutionEnabled(1, 100);
 
-        resolutions[5] = ResolutionConfig({takerFee: 500, makerFee: -400});
-        emit ResolutionEnabled(5, 500, -400);
+        resolutions[5] = 500;
+        emit ResolutionEnabled(5, 500);
 
-        resolutions[30] = ResolutionConfig({takerFee: 3000, makerFee: -2400});
-        emit ResolutionEnabled(30, 3000, -2400);
+        resolutions[30] = 3000;
+        emit ResolutionEnabled(30, 3000);
     }
 
     /// @inheritdoc IGridFactory
@@ -52,12 +52,12 @@ contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
         // GF_PAE: grid already exists
         require(grids[tokenA][tokenB][resolution] == address(0), "GF_PAE");
 
-        ResolutionConfig memory resolutionCfg = resolutions[resolution];
+        int24 takerFee = resolutions[resolution];
         // GF_RNE: resolution not enabled
-        require(resolutionCfg.takerFee > 0, "GF_RNE");
+        require(takerFee > 0, "GF_RNE");
 
         (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        grid = deploy(token0, token1, resolution, resolutionCfg.takerFee, resolutionCfg.makerFee, priceOracle, weth9);
+        grid = deploy(token0, token1, resolution, takerFee, priceOracle, weth9);
         grids[tokenA][tokenB][resolution] = grid;
         grids[tokenB][tokenA][resolution] = grid;
         emit GridCreated(token0, token1, resolution, grid);

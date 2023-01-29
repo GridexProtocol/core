@@ -145,7 +145,6 @@ describe("Grid", () => {
                             amountOut: 10n ** 18n,
                             amountInMaximum: 10n ** 18n * 2n,
                             priceLimitX96: 0n,
-                            channel: signers[0].address,
                         },
                         {value: 10n ** 18n * 2n}
                     );
@@ -193,7 +192,6 @@ describe("Grid", () => {
                         amountOut: 10n ** 18n,
                         amountInMaximum: 10n ** 18n * 2n,
                         priceLimitX96: 0n,
-                        channel: signers[0].address,
                     });
                     expect((await gridTestHelper.gasUsed()).toNumber()).toMatchSnapshot();
                 }
@@ -239,7 +237,6 @@ describe("Grid", () => {
                             amountIn: 10n ** 18n / 2n,
                             amountOutMinimum: 0n,
                             priceLimitX96: 0n,
-                            channel: signers[0].address,
                         },
                         {value: 10n ** 18n / 2n}
                     );
@@ -287,7 +284,6 @@ describe("Grid", () => {
                         amountIn: 10n ** 18n / 2n,
                         amountOutMinimum: 0n,
                         priceLimitX96: 0n,
-                        channel: signers[0].address,
                     });
                     expect((await gridTestHelper.gasUsed()).toNumber()).toMatchSnapshot();
                 }

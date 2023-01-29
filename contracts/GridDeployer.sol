@@ -26,7 +26,6 @@ contract GridDeployer is IGridDeployer {
     /// @param token1 The second token in the grid, after sorting by address
     /// @param resolution The step size in initialized boundaries for a grid created with a given fee
     /// @param takerFee The taker fee, denominated in hundredths of a bip (i.e. 1e-6)
-    /// @param makerFee The maker fee, denominated in hundredths of a bip (i.e. 1e-6)
     /// @param priceOracle The address of the price oracle contract
     /// @param weth9 The address of the WETH9 contract
     /// @return grid The address of the deployed grid
@@ -35,11 +34,10 @@ contract GridDeployer is IGridDeployer {
         address token1,
         int24 resolution,
         int24 takerFee,
-        int24 makerFee,
         address priceOracle,
         address weth9
     ) internal returns (address grid) {
-        parameters = Parameters(token0, token1, resolution, takerFee, makerFee, priceOracle, weth9);
+        parameters = Parameters(token0, token1, resolution, takerFee, priceOracle, weth9);
         grid = Create2.deploy(0, keccak256(abi.encode(token0, token1, resolution)), gridCreationCode);
         delete parameters;
     }
