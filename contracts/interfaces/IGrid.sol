@@ -20,9 +20,6 @@ interface IGrid {
     /// @notice The fee paid to the grid denominated in hundredths of a bip, i.e. 1e-6
     function takerFee() external view returns (int24);
 
-    /// @notice The fee paid to the grid denominated in hundredths of a bip, i.e. 1e-6
-    function makerFee() external view returns (int24);
-
     /// @notice The 0th slot of the grid holds a lot of values that can be gas-efficiently accessed
     /// externally as a single method
     /// @return priceX96 The current price of the grid, as a Q64.96
@@ -63,10 +60,6 @@ interface IGrid {
     /// @return token1 The amount of token1 owed
     function tokensOweds(address owner) external view returns (uint128 token0, uint128 token1);
 
-    /// @notice The amounts of token0 and token1 that are owed to the channel
-    /// @param channel The address of channel
-    function channelFees(address channel) external view returns (uint128 token0, uint128 token1);
-
     /// @notice Returns the information of a given bundle
     /// @param bundleId The unique identifier of the bundle
     /// @return boundaryLower The lower boundary of the bundle
@@ -106,7 +99,6 @@ interface IGrid {
     /// @notice Swaps token0 for token1, or vice versa
     /// @dev The caller of this method receives a callback in the form of IGridSwapCallback#gridexSwapCallback
     /// @param recipient The address to receive the output of the swap
-    /// @param channel The address to receive the channel fee
     /// @param zeroForOne The swap direction, true for token0 to token1 and false otherwise
     /// @param amountSpecified The amount of the swap, configured as an exactInput (positive)
     /// or an exactOutput (negative)
@@ -119,7 +111,6 @@ interface IGrid {
     /// by the exact amount. When positive, it will increase by at least this amount.
     function swap(
         address recipient,
-        address channel,
         bool zeroForOne,
         int256 amountSpecified,
         uint160 priceLimitX96,
@@ -188,20 +179,6 @@ interface IGrid {
     /// @return amount0 The amount of fees collected in token0
     /// @return amount1 The amount of fees collected in token1
     function collect(
-        address recipient,
-        uint128 amount0Requested,
-        uint128 amount1Requested
-    ) external returns (uint128 amount0, uint128 amount1);
-
-    /// @notice Collects the channel fee accrued to the grid
-    /// @param recipient The address to receive the collected fees
-    /// @param amount0Requested The maximum amount of token0 to send.
-    /// Set to 0 if fees should only be collected in token1.
-    /// @param amount1Requested The maximum amount of token1 to send.
-    /// Set to 0 if fees should only be collected in token0.
-    /// @return amount0 The amount of channel fees collected in token0
-    /// @return amount1 The amount of channel fees collected in token1
-    function collectChannelFees(
         address recipient,
         uint128 amount0Requested,
         uint128 amount1Requested

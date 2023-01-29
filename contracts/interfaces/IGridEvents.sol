@@ -97,18 +97,4 @@ interface IGridEvents {
     /// @param amount0 The amount of token0 fees that is withdrawn
     /// @param amount1 The amount of token1 fees that is withdrawn
     event Collect(address indexed sender, address indexed recipient, uint128 amount0, uint128 amount1);
-
-    /// @notice Emitted when the collected protocol fees are withdrawn by the sender
-    /// @param sender The address that collects the protocol fees
-    /// @param recipient The address that receives the protocol fees
-    /// @param amount0 The amount of token0 protocol fees that is withdrawn
-    /// @param amount1 The amount of token1 protocol fees that is withdrawn
-    event CollectFeeProtocol(address indexed sender, address indexed recipient, uint128 amount0, uint128 amount1);
-
-    /// @notice Emitted when the collected channel fees are withdrawn by the sender
-    /// @param sender The address that collects the channel fees
-    /// @param recipient The address that receives the channel fees
-    /// @param amount0 The amount of token0 channel fees that is withdrawn
-    /// @param amount1 The amount of token1 channel fees that is withdrawn
-    event CollectFeeChannel(address indexed sender, address indexed recipient, uint128 amount0, uint128 amount1);
 }

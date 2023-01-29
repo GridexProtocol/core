@@ -3,11 +3,10 @@ pragma solidity ^0.8.0;
 
 /// @title The interface for Gridex grid factory
 interface IGridFactory {
-    /// @notice Emitted when a new resolution is enabled for grid creation via the trading config
+    /// @notice Emitted when a new resolution is enabled for grid creation via the grid factory
     /// @param resolution The step size in initialized boundaries for a grid created with a given fee
     /// @param takerFee The taker fee, denominated in hundredths of a bip (i.e. 1e-6)
-    /// @param makerFee The maker fee, denominated in hundredths of a bip (i.e. 1e-6)
-    event ResolutionEnabled(int24 indexed resolution, int24 indexed takerFee, int24 indexed makerFee);
+    event ResolutionEnabled(int24 indexed resolution, int24 indexed takerFee);
 
     /// @notice Emitted upon grid creation
     /// @param token0 The first token in the grid, after sorting by address
@@ -23,12 +22,11 @@ interface IGridFactory {
         int24 makerFee;
     }
 
-    /// @notice Returns the taker fee and maker fee for the given resolution if enabled. Else, returns 0.
+    /// @notice Returns the taker fee for the given resolution if enabled. Else, returns 0.
     /// @dev A resolution can never be removed, so this value should be hard coded or cached in the calling context
     /// @param resolution The enabled resolution
     /// @return takerFee The taker fee, denominated in hundredths of a bip (i.e. 1e-6)
-    /// @return makerFee The maker fee, denominated in hundredths of a bip (i.e. 1e-6)
-    function resolutions(int24 resolution) external view returns (int24 takerFee, int24 makerFee);
+    function resolutions(int24 resolution) external view returns (int24 takerFee);
 
     /// @notice The implementation address of the price oracle
     function priceOracle() external view returns (address);

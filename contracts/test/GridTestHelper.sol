@@ -127,7 +127,6 @@ contract GridTestHelper is IGridPlaceMakerOrderCallback, IGridSwapCallback, Abst
         uint256 amountIn;
         uint256 amountOutMinimum;
         uint160 priceLimitX96;
-        address channel;
     }
 
     function exactInput(ExactInputParameters calldata parameters) external payable {
@@ -145,7 +144,6 @@ contract GridTestHelper is IGridPlaceMakerOrderCallback, IGridSwapCallback, Abst
         address recipient = parameters.recipient == address(0) ? address(this) : parameters.recipient;
         (int256 amount0, int256 amount1) = grid.swap(
             recipient,
-            parameters.channel,
             zeroForOne,
             int256(parameters.amountIn),
             parameters.priceLimitX96 == 0
@@ -171,7 +169,6 @@ contract GridTestHelper is IGridPlaceMakerOrderCallback, IGridSwapCallback, Abst
         uint256 amountOut;
         uint256 amountInMaximum;
         uint160 priceLimitX96;
-        address channel;
     }
 
     function exactOutput(ExactOutputParameters calldata parameters) external payable {
@@ -189,7 +186,6 @@ contract GridTestHelper is IGridPlaceMakerOrderCallback, IGridSwapCallback, Abst
         address recipient = parameters.recipient == address(0) ? address(this) : parameters.recipient;
         (int256 amount0, int256 amount1) = grid.swap(
             recipient,
-            parameters.channel,
             zeroForOne,
             int256(parameters.amountOut) * -1,
             parameters.priceLimitX96 == 0

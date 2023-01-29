@@ -18,7 +18,6 @@ contract SwapTest is IGridSwapCallback, AbstractPayFacade, Context {
         int256 amountSpecified;
         uint160 priceLimitX96;
         address payer;
-        address channel;
     }
 
     constructor(address _factory, address _weth9) AbstractPayFacade(_factory, _weth9) {}
@@ -47,7 +46,6 @@ contract SwapTest is IGridSwapCallback, AbstractPayFacade, Context {
         for (uint256 i = 0; i < times; ++i) {
             grid.swap(
                 data.recipient,
-                data.channel,
                 data.zeroForOne,
                 data.amountSpecified,
                 data.priceLimitX96,
@@ -61,7 +59,6 @@ contract SwapTest is IGridSwapCallback, AbstractPayFacade, Context {
         IGrid grid = IGrid(GridAddress.computeAddress(gridFactory, gridKey));
         grid.swap(
             data.recipient,
-            data.channel,
             data.zeroForOne,
             data.amountSpecified,
             data.priceLimitX96,
