@@ -301,7 +301,8 @@ library SwapMath {
         uint160 priceAvgX96;
         unchecked {
             uint256 priceAccumulateX96 = uint256(priceCurrentX96) + priceNextX96;
-            priceAvgX96 = Math.mulDiv(priceAccumulateX96, 1, 2, priceNextRounding).toUint160();
+            priceAccumulateX96 = priceNextRounding == Math.Rounding.Up ? priceAccumulateX96 + 1 : priceAccumulateX96;
+            priceAvgX96 = uint160(priceAccumulateX96 >> 1);
         }
 
         amountIn = zeroForOne
