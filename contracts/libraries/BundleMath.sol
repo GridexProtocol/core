@@ -24,28 +24,33 @@ library BundleMath {
         uint128 makerAmountRemaining = self.makerAmountRemaining;
         // the amount out actually paid to the taker
         parameters.amountOutUsed = amountOut <= makerAmountRemaining ? amountOut : makerAmountRemaining;
-        unchecked {
-            parameters.amountOutRemaining = amountOut - parameters.amountOutUsed;
 
-            // updates maker amount remaining
+        if (parameters.amountOutUsed == amountOut) {
+            parameters.amountInUsed = amountIn;
+
+            parameters.takerFeeForMakerAmountUsed = takerFeeForMakerAmount;
+        } else {
+            unchecked {
+                parameters.amountInUsed = uint128((uint256(parameters.amountOutUsed) * amountIn) / amountOut);
+                parameters.amountInRemaining = amountIn - parameters.amountInUsed;
+
+                parameters.amountOutRemaining = amountOut - parameters.amountOutUsed;
+
+                parameters.takerFeeForMakerAmountUsed = uint128(
+                    (uint256(parameters.amountOutUsed) * takerFeeForMakerAmount) / amountOut
+                );
+                parameters.takerFeeForMakerAmountRemaining =
+                    takerFeeForMakerAmount -
+                    parameters.takerFeeForMakerAmountUsed;
+            }
+        }
+
+        // updates maker amount remaining
+        unchecked {
             self.makerAmountRemaining = makerAmountRemaining - parameters.amountOutUsed;
         }
 
-        // the amount in actually paid to the maker
-        parameters.amountInUsed = Math.mulDiv(parameters.amountOutUsed, amountIn, amountOut);
-        unchecked {
-            parameters.amountInRemaining = amountIn - parameters.amountInUsed;
-        }
-
         self.takerAmountRemaining = self.takerAmountRemaining + (parameters.amountInUsed).toUint128();
-
-        // the fees actually paid by the taker to the maker
-        parameters.takerFeeForMakerAmountUsed = Math
-            .mulDiv(parameters.amountOutUsed, takerFeeForMakerAmount, amountOut)
-            .toUint128();
-        unchecked {
-            parameters.takerFeeForMakerAmountRemaining = takerFeeForMakerAmount - parameters.takerFeeForMakerAmountUsed;
-        }
 
         self.takerFeeAmountRemaining = self.takerFeeAmountRemaining + parameters.takerFeeForMakerAmountUsed;
     }
@@ -81,7 +86,7 @@ library BundleMath {
     /// @param self The bundle to be updated
     /// @param makerAmountRaw The amount of liquidity added by the maker when placing an order
     /// @return makerAmountOut The amount of token0 or token1 that the maker will receive
-    /// @return takerAmountOut The amount of token0 or token1 that the maker will receive
+    /// @return takerAmountOut The amount of token1 or token0 that the maker will receive
     /// @return takerFeeAmountOut The amount of fees that the maker will receive
     /// @return makerAmountTotalNew The remaining amount of liquidity added by the maker
     function removeLiquidity(
@@ -96,19 +101,17 @@ library BundleMath {
         uint128 takerAmountRemaining = self.takerAmountRemaining;
         uint128 takerFeeAmountRemaining = self.takerFeeAmountRemaining;
 
-        makerAmountOut = Math.mulDiv(makerAmountRaw, makerAmountRemaining, makerAmountTotal).toUint128();
-
-        takerAmountOut = Math.mulDiv(makerAmountRaw, takerAmountRemaining, makerAmountTotal).toUint128();
-        takerFeeAmountOut = Math.mulDiv(makerAmountRaw, takerFeeAmountRemaining, makerAmountTotal).toUint128();
-
-        makerAmountTotalNew = makerAmountTotal - makerAmountRaw;
-        self.makerAmountTotal = makerAmountTotalNew;
-
         unchecked {
+            makerAmountTotalNew = makerAmountTotal - makerAmountRaw;
+            self.makerAmountTotal = makerAmountTotalNew;
+
+            makerAmountOut = uint128((uint256(makerAmountRaw) * makerAmountRemaining) / makerAmountTotal);
             self.makerAmountRemaining = makerAmountRemaining - makerAmountOut;
 
+            takerAmountOut = uint128((uint256(makerAmountRaw) * takerAmountRemaining) / makerAmountTotal);
             self.takerAmountRemaining = takerAmountRemaining - takerAmountOut;
 
+            takerFeeAmountOut = uint128((uint256(makerAmountRaw) * takerFeeAmountRemaining) / makerAmountTotal);
             self.takerFeeAmountRemaining = takerFeeAmountRemaining - takerFeeAmountOut;
         }
     }

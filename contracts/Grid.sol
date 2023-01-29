@@ -52,8 +52,8 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     uint256 private _orderId;
     mapping(uint256 => Order) public override orders;
 
-    uint256 private _bundleId;
-    mapping(uint256 => Bundle) public override bundles;
+    uint64 private _bundleId;
+    mapping(uint64 => Bundle) public override bundles;
 
     mapping(address => TokensOwed) public override tokensOweds;
 
@@ -143,8 +143,8 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         require(amount > 0, "G_OAZ");
         // G_IBL: invalid boundary lower
         require(
-            BoundaryMath.isInRange(boundaryLower) &&
-                BoundaryMath.isInRange(boundaryLower + resolution) &&
+            boundaryLower >= BoundaryMath.MIN_BOUNDARY &&
+                boundaryLower + resolution <= BoundaryMath.MAX_BOUNDARY &&
                 BoundaryMath.isValidBoundary(boundaryLower, resolution),
             "G_IBL"
         );
@@ -152,7 +152,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         // updates the boundary
         Boundary storage boundary = _boundaryAt(boundaryLower, zero);
         Bundle storage bundle;
-        uint256 bundleId = boundary.bundle1Id;
+        uint64 bundleId = boundary.bundle1Id;
         // 1. If bundle1 has been initialized, add the order to bundle1 directly
         // 2. If bundle0 is not initialized, add the order to bundle0 after initialization
         // 3. If bundle0 has been initialized, and bundle0 has been used,
@@ -161,12 +161,14 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             bundle = bundles[bundleId];
             bundle.addLiquidity(amount);
         } else {
-            uint256 bundle0Id = boundary.bundle0Id;
+            uint64 bundle0Id = boundary.bundle0Id;
             if (bundle0Id == 0) {
                 // initializes new bundle
                 (bundleId, bundle) = _nextBundle(boundaryLower, zero);
                 boundary.bundle0Id = bundleId;
-                bundle.addLiquidityWithAmount(0, 0, amount);
+
+                bundle.makerAmountTotal = amount;
+                bundle.makerAmountRemaining = amount;
             } else {
                 bundleId = bundle0Id;
                 bundle = bundles[bundleId];
@@ -179,10 +181,11 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
                     (bundleId, bundle) = _nextBundle(boundaryLower, zero);
                     boundary.bundle1Id = bundleId;
 
-                    makerAmountTotal = 0;
-                    makerAmountRemaining = 0;
+                    bundle.makerAmountTotal = amount;
+                    bundle.makerAmountRemaining = amount;
+                } else {
+                    bundle.addLiquidityWithAmount(makerAmountTotal, makerAmountRemaining, amount);
                 }
-                bundle.addLiquidityWithAmount(makerAmountTotal, makerAmountRemaining, amount);
             }
         }
 
@@ -368,7 +371,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         state.amountOutputCalculated = state.amountOutputCalculated + step.amountOut;
         state.amountSpecifiedRemaining = state.amountSpecifiedRemaining < 0
             ? state.amountSpecifiedRemaining + int256(uint256(step.amountOut))
-            : state.amountSpecifiedRemaining - int256(step.amountIn) - int256(uint256(step.feeAmount));
+            : state.amountSpecifiedRemaining - step.amountIn.toInt256() - int256(uint256(step.feeAmount));
 
         // calculates maker and protocol fees
         (uint128 takerFeeForMakerAmount, uint128 takerFeeForProtocolAmount) = FeeMath.computeFees(
@@ -385,7 +388,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             );
             emit ChangeBundleForSwap(
                 boundary.bundle0Id,
-                SafeCast.toInt256(parameters.amountOutUsed) * -1,
+                -int256(uint256(parameters.amountOutUsed)),
                 parameters.amountInUsed,
                 parameters.takerFeeForMakerAmountUsed
             );
@@ -403,7 +406,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
                     );
                     emit ChangeBundleForSwap(
                         boundary.bundle0Id,
-                        SafeCast.toInt256(parameters.amountOutUsed) * -1,
+                        -int256(uint256(parameters.amountOutUsed)),
                         parameters.amountInUsed,
                         parameters.takerFeeForMakerAmountUsed
                     );
@@ -446,8 +449,8 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         address tokenToPay;
         address tokenToReceive;
         (tokenToPay, tokenToReceive, amount0, amount1) = state.zeroForOne
-            ? (token1, token0, SafeCast.toInt256(amountInputTotal), SafeCast.toInt256(amountOutputTotal) * -1)
-            : (token0, token1, SafeCast.toInt256(amountOutputTotal) * -1, SafeCast.toInt256(amountInputTotal));
+            ? (token1, token0, SafeCast.toInt256(amountInputTotal), -SafeCast.toInt256(amountOutputTotal))
+            : (token0, token1, -SafeCast.toInt256(amountOutputTotal), SafeCast.toInt256(amountInputTotal));
 
         // pays token to recipient
         SafeERC20.safeTransfer(IERC20(tokenToPay), recipient, amountOutputTotal);
@@ -534,8 +537,8 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
 
         emit ChangeBundleForSettleOrder(
             order.bundleId,
-            int256(uint256(order.amount)) * -1,
-            int256(uint256(makerAmountOut)) * -1
+            -int256(uint256(order.amount)),
+            -int256(uint256(makerAmountOut))
         );
 
         // removes liquidity from boundary
@@ -559,22 +562,21 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
 
     function _collect(address recipient, uint128 amount0, uint128 amount1, bool unwrapWETH9) private {
         if (amount0 > 0) {
-            if (unwrapWETH9 && token0 == weth9) {
-                IWETHMinimum(weth9).withdraw(amount0);
-                Address.sendValue(payable(recipient), amount0);
-            } else {
-                SafeERC20.safeTransfer(IERC20(token0), recipient, amount0);
-            }
+            _collectSingle(recipient, token0, amount0, unwrapWETH9);
         }
         if (amount1 > 0) {
-            if (unwrapWETH9 && token1 == weth9) {
-                IWETHMinimum(weth9).withdraw(amount1);
-                Address.sendValue(payable(recipient), amount1);
-            } else {
-                SafeERC20.safeTransfer(IERC20(token1), recipient, amount1);
-            }
+            _collectSingle(recipient, token1, amount1, unwrapWETH9);
         }
         emit Collect(_msgSender(), recipient, amount0, amount1);
+    }
+
+    function _collectSingle(address recipient, address token, uint128 amount, bool unwrapWETH9) private {
+        if (unwrapWETH9 && token == weth9) {
+            IWETHMinimum(token).withdraw(amount);
+            Address.sendValue(payable(recipient), amount);
+        } else {
+            SafeERC20.safeTransfer(IERC20(token), recipient, amount);
+        }
     }
 
     /// @inheritdoc IGrid
@@ -667,12 +669,12 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     }
 
     /// @dev Returns the next bundle id
-    function _nextBundleId() private returns (uint256 bundleId) {
+    function _nextBundleId() private returns (uint64 bundleId) {
         bundleId = ++_bundleId;
     }
 
     /// @dev Creates and returns the next bundle and its corresponding id
-    function _nextBundle(int24 boundaryLower, bool zero) private returns (uint256 bundleId, Bundle storage bundle) {
+    function _nextBundle(int24 boundaryLower, bool zero) private returns (uint64 bundleId, Bundle storage bundle) {
         bundleId = _nextBundleId();
         bundle = bundles[bundleId];
         bundle.boundaryLower = boundaryLower;

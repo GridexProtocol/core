@@ -9,11 +9,13 @@ import "./PriceOracle.sol";
 
 /// @title The implementation of a Gridex grid factory
 contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
-    int24 constant ALLOW_MAX_FEE = 1e4;
-
     address public immutable override priceOracle;
     address public immutable weth9;
     mapping(int24 => ResolutionConfig) public override resolutions;
+    /// @notice The first key and the second key are token addresses, and the third key is the resolution,
+    /// and the value is the grid address
+    /// @dev For tokenA/tokenB and the specified resolution, both the combination of tokenA/tokenB
+    /// and the combination of tokenB/tokenA with resolution will be stored in the mapping
     mapping(address => mapping(address => mapping(int24 => address))) public override grids;
 
     constructor(address _weth9, bytes memory _gridPrefixCreationCode) {

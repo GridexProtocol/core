@@ -39,7 +39,7 @@ interface IGrid {
     /// which is the sum of bundle0 and bundle1
     function boundaries0(
         int24 boundary
-    ) external view returns (uint256 bundle0Id, uint256 bundle1Id, uint128 makerAmountRemaining);
+    ) external view returns (uint64 bundle0Id, uint64 bundle1Id, uint128 makerAmountRemaining);
 
     /// @notice Returns the boundary information of token1
     /// @param boundary The boundary of the grid
@@ -49,7 +49,7 @@ interface IGrid {
     /// which is the sum of bundle0 and bundle1
     function boundaries1(
         int24 boundary
-    ) external view returns (uint256 bundle0Id, uint256 bundle1Id, uint128 makerAmountRemaining);
+    ) external view returns (uint64 bundle0Id, uint64 bundle1Id, uint128 makerAmountRemaining);
 
     /// @notice Returns 256 packed boundary initialized boolean values for token0
     function boundaryBitmaps0(int16 wordPos) external view returns (uint256 word);
@@ -76,7 +76,7 @@ interface IGrid {
     /// @return takerAmountRemaining The remaining amount of token0 or token1 that have been swapped in from the takers
     /// @return takerFeeAmountRemaining The remaining amount of fees that takers have paid in
     function bundles(
-        uint256 bundleId
+        uint64 bundleId
     )
         external
         view
@@ -94,7 +94,7 @@ interface IGrid {
     /// @return bundleId The unique identifier of the bundle -- represents which bundle this order belongs to
     /// @return owner The address of the owner of the order
     /// @return amount The amount of token0 or token1 to add
-    function orders(uint256 orderId) external view returns (uint256 bundleId, address owner, uint128 amount);
+    function orders(uint256 orderId) external view returns (uint64 bundleId, address owner, uint128 amount);
 
     ///==================================== Grid Actions ====================================
 
@@ -149,6 +149,7 @@ interface IGrid {
     /// @notice Settle maker order and collect
     /// @param recipient The address to receive the output of the settlement
     /// @param orderId The unique identifier of the order
+    /// @param unwrapWETH9 Whether to unwrap WETH9 to ETH
     /// @return amount0 The amount of token0 that the maker received
     /// @return amount1 The amount of token1 that the maker received
     function settleMakerOrderAndCollect(
@@ -160,6 +161,7 @@ interface IGrid {
     /// @notice Settles maker orders and collects in a batch
     /// @param recipient The address to receive the output of the settlement
     /// @param orderIds The unique identifiers of the orders
+    /// @param unwrapWETH9 Whether to unwrap WETH9 to ETH
     /// @return amount0Total The total amount of token0 that the maker received
     /// @return amount1Total The total amount of token1 that the maker received
     function settleMakerOrderAndCollectInBatch(

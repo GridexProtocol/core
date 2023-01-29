@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 library BoundaryMath {
-    int24 internal constant MIN_BOUNDARY = -527400;
-    int24 internal constant MAX_BOUNDARY = 443635;
+    int24 public constant MIN_BOUNDARY = -527400;
+    int24 public constant MAX_BOUNDARY = 443635;
 
     /// @dev The minimum value that can be returned from #getPriceX96AtBoundary. Equivalent to getPriceX96AtBoundary(MIN_BOUNDARY)
     uint160 internal constant MIN_RATIO = 989314;
@@ -38,7 +38,7 @@ library BoundaryMath {
     /// @return priceX96 The price at the boundary, as a Q64.96
     function getPriceX96AtBoundary(int24 boundary) internal pure returns (uint160 priceX96) {
         unchecked {
-            uint256 absBoundary = boundary < 0 ? uint256(-int256(boundary)) : uint256(int256(boundary));
+            uint256 absBoundary = boundary < 0 ? uint256(-int256(boundary)) : uint24(boundary);
 
             uint256 ratio = absBoundary & 0x1 != 0
                 ? 0xfff97272373d413259a46990580e213a
@@ -69,7 +69,7 @@ library BoundaryMath {
             // due to out boundary input limitations, we then proceed to downcast as the
             // result will always fit within 160 bits.
             // we round up in the division so that getBoundaryAtPriceX96 of the output price is always consistent
-            priceX96 = uint160((ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1));
+            priceX96 = uint160((ratio + 0xffffffff) >> 32);
         }
     }
 
@@ -231,9 +231,7 @@ library BoundaryMath {
     /// @return boundaryLower The lower boundary for the given boundary and resolution
     function getBoundaryLowerAtBoundary(int24 boundary, int24 resolution) internal pure returns (int24 boundaryLower) {
         unchecked {
-            int24 remainder = boundary % resolution;
-            boundaryLower = boundary - remainder;
-            boundaryLower = remainder >= 0 ? boundaryLower : boundaryLower - resolution;
+            return boundary - (((boundary % resolution) + resolution) % resolution);
         }
     }
 

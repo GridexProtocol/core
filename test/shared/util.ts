@@ -72,10 +72,7 @@ async function expectBoundaryInitialized(
 
 async function formatBoundaryToBoundaryLower(boundary: PromiseOrValue<number>, resolution: number): Promise<number> {
     const boundaryValue = await boundary;
-    const remainder = boundaryValue % resolution;
-    let boundaryLower = boundaryValue - remainder;
-    boundaryLower = remainder >= 0 ? boundaryLower : boundaryLower - resolution;
-    return boundaryLower;
+    return boundaryValue - (((boundaryValue % resolution) + resolution) % resolution);
 }
 
 export {

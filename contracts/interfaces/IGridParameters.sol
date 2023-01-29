@@ -53,6 +53,7 @@ interface IGridParameters {
         uint160 initializedBoundaryUpperPriceX96;
         /// @dev The protocol fee that the taker needs to pay
         uint128 feeProtocol;
+        /// @dev Whether the swap has been completed
         bool stopSwap;
     }
 

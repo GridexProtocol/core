@@ -11,7 +11,7 @@ library BoundaryBitmap {
     /// @return bitPos The bit position in the word where the flag is stored
     function position(int24 boundary) internal pure returns (int16 wordPos, uint8 bitPos) {
         wordPos = int16(boundary >> 8);
-        bitPos = uint8(uint24(boundary % 256));
+        bitPos = uint8(uint24(boundary));
     }
 
     /// @notice Flips the boolean value of the initialization state of the given boundary
@@ -61,9 +61,12 @@ library BoundaryBitmap {
     {
         int24 boundaryUpper = boundaryLower + resolution;
         if (currentBoundaryInitialized) {
-            uint160 boundaryLowerPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryLower);
-            uint160 boundaryUpperPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryUpper);
-            if ((lte && boundaryLowerPriceX96 < priceX96) || (!lte && boundaryUpperPriceX96 > priceX96)) {
+            uint160 boundaryLowerPriceX96;
+            uint160 boundaryUpperPriceX96;
+            if (
+                (lte && (boundaryLowerPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryLower)) < priceX96) ||
+                (!lte && (boundaryUpperPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryUpper)) > priceX96)
+            ) {
                 return (boundaryLower, true, boundaryLowerPriceX96, boundaryUpperPriceX96);
             }
         }
@@ -99,7 +102,7 @@ library BoundaryBitmap {
             // Begin from the word of the next boundary, since the current boundary state is immaterial
             (int16 wordPos, uint8 bitPos) = position(compressed - 1);
             // all the 1s at or to the right of the current bitPos
-            uint256 mask = (1 << bitPos) - 1 + (1 << bitPos);
+            uint256 mask = ~uint256(0) >> (type(uint8).max - bitPos);
             uint256 masked = self[wordPos] & mask;
 
             // If no initialized boundaries exist to the right of the current boundary,
@@ -119,7 +122,7 @@ library BoundaryBitmap {
             // Begin from the word of the next boundary, since the current boundary state is immaterial
             (int16 wordPos, uint8 bitPos) = position(compressed + 1);
             // all the 1s at or to the left of the bitPos
-            uint256 mask = ~((1 << bitPos) - 1);
+            uint256 mask = ~uint256(0) << bitPos;
             uint256 masked = self[wordPos] & mask;
 
             // If no initialized boundaries exist to the left of the current boundary,

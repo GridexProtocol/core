@@ -1,73 +1,73 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Grid #createGrid 1`] = `6731392`;
+exports[`Grid #createGrid 1`] = `6547354`;
 
-exports[`Grid #initialize 1`] = `96790`;
+exports[`Grid #initialize 1`] = `96757`;
 
-exports[`Grid #placeMakerOrder ERC20 1`] = `288242`;
+exports[`Grid #placeMakerOrder ERC20 1`] = `242447`;
 
-exports[`Grid #placeMakerOrder ERC20 2`] = `137683`;
+exports[`Grid #placeMakerOrder ERC20 2`] = `111782`;
 
-exports[`Grid #placeMakerOrder ERC20 3`] = `137683`;
+exports[`Grid #placeMakerOrder ERC20 3`] = `111782`;
 
-exports[`Grid #placeMakerOrder ERC20 4`] = `137683`;
+exports[`Grid #placeMakerOrder ERC20 4`] = `111782`;
 
-exports[`Grid #placeMakerOrder ERC20 5`] = `137683`;
+exports[`Grid #placeMakerOrder ERC20 5`] = `111782`;
 
-exports[`Grid #placeMakerOrder ETH 1`] = `305777`;
+exports[`Grid #placeMakerOrder ETH 1`] = `259983`;
 
-exports[`Grid #placeMakerOrder ETH 2`] = `155208`;
+exports[`Grid #placeMakerOrder ETH 2`] = `129307`;
 
-exports[`Grid #placeMakerOrder ETH 3`] = `155208`;
+exports[`Grid #placeMakerOrder ETH 3`] = `129307`;
 
-exports[`Grid #placeMakerOrder ETH 4`] = `155208`;
+exports[`Grid #placeMakerOrder ETH 4`] = `129307`;
 
-exports[`Grid #placeMakerOrder ETH 5`] = `155208`;
+exports[`Grid #placeMakerOrder ETH 5`] = `129307`;
 
-exports[`Grid #swap exactInput ERC20 1`] = `190037`;
+exports[`Grid #swap exactInput ERC20 1`] = `186000`;
 
-exports[`Grid #swap exactInput ERC20 2`] = `101217`;
+exports[`Grid #swap exactInput ERC20 2`] = `98273`;
 
-exports[`Grid #swap exactInput ERC20 3`] = `101217`;
+exports[`Grid #swap exactInput ERC20 3`] = `98273`;
 
-exports[`Grid #swap exactInput ERC20 4`] = `101214`;
+exports[`Grid #swap exactInput ERC20 4`] = `98256`;
 
-exports[`Grid #swap exactInput ERC20 5`] = `113499`;
+exports[`Grid #swap exactInput ERC20 5`] = `110541`;
 
-exports[`Grid #swap exactInput ERC20 6`] = `101213`;
+exports[`Grid #swap exactInput ERC20 6`] = `98255`;
 
-exports[`Grid #swap exactInput ETH 1`] = `170571`;
+exports[`Grid #swap exactInput ETH 1`] = `167486`;
 
-exports[`Grid #swap exactInput ETH 2`] = `119306`;
+exports[`Grid #swap exactInput ETH 2`] = `116205`;
 
-exports[`Grid #swap exactInput ETH 3`] = `119306`;
+exports[`Grid #swap exactInput ETH 3`] = `116205`;
 
-exports[`Grid #swap exactInput ETH 4`] = `119306`;
+exports[`Grid #swap exactInput ETH 4`] = `116205`;
 
-exports[`Grid #swap exactInput ETH 5`] = `131593`;
+exports[`Grid #swap exactInput ETH 5`] = `128492`;
 
-exports[`Grid #swap exactInput ETH 6`] = `119330`;
+exports[`Grid #swap exactInput ETH 6`] = `116235`;
 
-exports[`Grid #swap exactOutput ERC20 1`] = `190400`;
+exports[`Grid #swap exactOutput ERC20 1`] = `185839`;
 
-exports[`Grid #swap exactOutput ERC20 2`] = `101577`;
+exports[`Grid #swap exactOutput ERC20 2`] = `98095`;
 
-exports[`Grid #swap exactOutput ERC20 3`] = `113862`;
+exports[`Grid #swap exactOutput ERC20 3`] = `110380`;
 
-exports[`Grid #swap exactOutput ERC20 4`] = `101601`;
+exports[`Grid #swap exactOutput ERC20 4`] = `98125`;
 
-exports[`Grid #swap exactOutput ERC20 5`] = `113886`;
+exports[`Grid #swap exactOutput ERC20 5`] = `110410`;
 
-exports[`Grid #swap exactOutput ERC20 6`] = `101591`;
+exports[`Grid #swap exactOutput ERC20 6`] = `98109`;
 
-exports[`Grid #swap exactOutput ETH 1`] = `170619`;
+exports[`Grid #swap exactOutput ETH 1`] = `166873`;
 
-exports[`Grid #swap exactOutput ETH 2`] = `131606`;
+exports[`Grid #swap exactOutput ETH 2`] = `127860`;
 
-exports[`Grid #swap exactOutput ETH 3`] = `119343`;
+exports[`Grid #swap exactOutput ETH 3`] = `115603`;
 
-exports[`Grid #swap exactOutput ETH 4`] = `131480`;
+exports[`Grid #swap exactOutput ETH 4`] = `127815`;
 
-exports[`Grid #swap exactOutput ETH 5`] = `118325`;
+exports[`Grid #swap exactOutput ETH 5`] = `114712`;
 
-exports[`Grid #swap exactOutput ETH 6`] = `131470`;
+exports[`Grid #swap exactOutput ETH 6`] = `127799`;

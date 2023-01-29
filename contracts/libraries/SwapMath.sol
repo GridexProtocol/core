@@ -38,24 +38,31 @@ library SwapMath {
         uint128 makerAmount,
         int24 takerFeePips
     ) internal pure returns (ComputeSwapStep memory step) {
-        return
-            amountRemaining > 0
-                ? computeSwapStepForExactIn(
+        if (amountRemaining > 0) {
+            return
+                computeSwapStepForExactIn(
                     priceCurrentX96,
                     boundaryPriceX96,
                     priceLimitX96,
                     uint256(amountRemaining),
                     makerAmount,
                     takerFeePips
-                )
-                : computeSwapStepForExactOut(
+                );
+        } else {
+            uint256 absAmountRemaining;
+            unchecked {
+                absAmountRemaining = uint256(-amountRemaining);
+            }
+            return
+                computeSwapStepForExactOut(
                     priceCurrentX96,
                     boundaryPriceX96,
                     priceLimitX96,
-                    uint256(-amountRemaining) > makerAmount ? makerAmount : uint128(uint256(-amountRemaining)),
+                    absAmountRemaining > makerAmount ? makerAmount : uint128(absAmountRemaining),
                     makerAmount,
                     takerFeePips
                 );
+        }
     }
 
     function computeSwapStepForExactIn(
@@ -75,27 +82,32 @@ library SwapMath {
                     makerAmount,
                     takerFeePips
                 );
+        } else {
+            step.amountOut = _computeAmountOutForPriceLimit(
+                priceCurrentX96,
+                boundaryPriceX96,
+                priceLimitX96,
+                makerAmount
+            );
+
+            step = _computeSwapStepForExactOut(
+                priceCurrentX96,
+                boundaryPriceX96,
+                step.amountOut,
+                makerAmount,
+                takerFeePips
+            );
+            return
+                step.amountIn + step.feeAmount > takerAmountInRemaining // the remaining amount in is not enough to reach the limit price
+                    ? _computeSwapStepForExactIn(
+                        priceCurrentX96,
+                        boundaryPriceX96,
+                        takerAmountInRemaining,
+                        makerAmount,
+                        takerFeePips
+                    )
+                    : step;
         }
-
-        step.amountOut = _computeAmountOutForPriceLimit(priceCurrentX96, boundaryPriceX96, priceLimitX96, makerAmount);
-
-        step = _computeSwapStepForExactOut(
-            priceCurrentX96,
-            boundaryPriceX96,
-            step.amountOut,
-            makerAmount,
-            takerFeePips
-        );
-        return
-            step.amountIn + step.feeAmount > takerAmountInRemaining // the remaining amount in is not enough to reach the limit price
-                ? _computeSwapStepForExactIn(
-                    priceCurrentX96,
-                    boundaryPriceX96,
-                    takerAmountInRemaining,
-                    makerAmount,
-                    takerFeePips
-                )
-                : step;
     }
 
     function _computeSwapStepForExactIn(
@@ -289,7 +301,8 @@ library SwapMath {
         uint160 priceAvgX96;
         unchecked {
             uint256 priceAccumulateX96 = uint256(priceCurrentX96) + priceNextX96;
-            priceAvgX96 = Math.mulDiv(priceAccumulateX96, 1, 2, priceNextRounding).toUint160();
+            priceAccumulateX96 = priceNextRounding == Math.Rounding.Up ? priceAccumulateX96 + 1 : priceAccumulateX96;
+            priceAvgX96 = uint160(priceAccumulateX96 >> 1);
         }
 
         amountIn = zeroForOne
