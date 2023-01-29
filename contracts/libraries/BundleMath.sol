@@ -30,9 +30,11 @@ library BundleMath {
 
             parameters.takerFeeForMakerAmountUsed = takerFeeForMakerAmount;
         } else {
-            parameters.amountInUsed = (parameters.amountOutUsed * amountIn) / amountOut;
+            parameters.amountInUsed = uint128((uint256(parameters.amountOutUsed) * amountIn) / amountOut);
 
-            parameters.takerFeeForMakerAmountUsed = (parameters.amountOutUsed * takerFeeForMakerAmount) / amountOut;
+            parameters.takerFeeForMakerAmountUsed = uint128(
+                (uint256(parameters.amountOutUsed) * takerFeeForMakerAmount) / amountOut
+            );
 
             unchecked {
                 parameters.amountOutRemaining = amountOut - parameters.amountOutUsed;
@@ -101,10 +103,10 @@ library BundleMath {
         uint128 takerAmountRemaining = self.takerAmountRemaining;
         uint128 takerFeeAmountRemaining = self.takerFeeAmountRemaining;
 
-        makerAmountOut = (makerAmountRaw * makerAmountRemaining) / makerAmountTotal;
+        makerAmountOut = uint128((uint256(makerAmountRaw) * makerAmountRemaining) / makerAmountTotal);
 
-        takerAmountOut = (makerAmountRaw * takerAmountRemaining) / makerAmountTotal;
-        takerFeeAmountOut = (makerAmountRaw * takerFeeAmountRemaining) / makerAmountTotal;
+        takerAmountOut = uint128((uint256(makerAmountRaw) * takerAmountRemaining) / makerAmountTotal);
+        takerFeeAmountOut = uint128((uint256(makerAmountRaw) * takerFeeAmountRemaining) / makerAmountTotal);
 
         unchecked {
             makerAmountTotalNew = makerAmountTotal - makerAmountRaw;
