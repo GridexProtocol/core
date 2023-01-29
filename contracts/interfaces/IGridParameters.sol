@@ -2,6 +2,19 @@
 pragma solidity ^0.8.0;
 
 interface IGridParameters {
+    /// @dev Parameters for initializing the grid
+    struct InitializeParameters {
+        /// @dev The initial price of the grid, as a Q64.96.
+        /// Price is represented as an amountToken1/amountToken0 Q64.96 value.
+        uint160 priceX96;
+        /// @dev The address to receive orders
+        address recipient;
+        /// @dev Represents the order parameters for token0
+        BoundaryLowerWithAmountParameters[] orders0;
+        /// @dev Represents the order parameters for token1
+        BoundaryLowerWithAmountParameters[] orders1;
+    }
+
     /// @dev Parameters for placing an order
     struct PlaceOrderParameters {
         /// @dev The address to receive the order

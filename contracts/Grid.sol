@@ -70,24 +70,47 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
     }
 
     /// @inheritdoc IGrid
-    function initialize(uint160 priceX96) external override {
+    function initialize(
+        InitializeParameters memory parameters,
+        bytes calldata data
+    ) external override returns (uint256[] memory orderIds0, uint256[] memory orderIds1) {
         // G_GAI: grid already initialized
         require(slot0.priceX96 == 0, "G_GAI");
-
         // G_POR: price out of range
-        require(BoundaryMath.isPriceX96InRange(priceX96), "G_POR");
-
-        int24 boundary = BoundaryMath.getBoundaryAtPriceX96(priceX96);
+        require(BoundaryMath.isPriceX96InRange(parameters.priceX96), "G_POR");
+        // G_T0OE: token0 orders must be non-empty
+        require(parameters.orders0.length > 0, "G_ONE");
+        // G_T1OE: token1 orders must be non-empty
+        require(parameters.orders1.length > 0, "G_ONE");
 
         IPriceOracle(priceOracle).register(token0, token1, resolution);
+
+        // emits an Initialize event before placing orders
+        int24 boundary = BoundaryMath.getBoundaryAtPriceX96(parameters.priceX96);
+        emit Initialize(parameters.priceX96, boundary);
+
+        // places orders for token0 and token1
+        uint256 amount0Total;
+        (orderIds0, amount0Total) = _placeMakerOrderInBatch(parameters.recipient, true, parameters.orders0);
+        uint256 amount1Total;
+        (orderIds1, amount1Total) = _placeMakerOrderInBatch(parameters.recipient, false, parameters.orders1);
+        (uint256 balance0Before, uint256 balance1Before) = (_balance0(), _balance1());
+
+        IGridPlaceMakerOrderCallback(_msgSender()).gridexPlaceMakerOrderCallback(amount0Total, amount1Total, data);
+
+        (uint256 balance0After, uint256 balance1After) = (_balance0(), _balance1());
+        // G_TPF: token pay failed
+        require(
+            balance0After - balance0Before >= amount0Total && balance1After - balance1Before >= amount1Total,
+            "G_TPF"
+        );
+
         slot0 = Slot0({
-            priceX96: priceX96,
+            priceX96: parameters.priceX96,
             boundary: boundary,
             blockTimestamp: uint32(block.timestamp),
             unlocked: true
         });
-
-        emit Initialize(priceX96, boundary);
     }
 
     /// @inheritdoc IGrid
@@ -107,14 +130,23 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         PlaceOrderInBatchParameters memory parameters,
         bytes calldata data
     ) external override lock returns (uint256[] memory orderIds) {
-        orderIds = new uint256[](parameters.orders.length);
-        uint256 orderId = _nextOrderIdInBatch(parameters.orders.length);
-
         uint256 amountTotal;
-        for (uint256 i = 0; i < parameters.orders.length; ) {
-            BoundaryLowerWithAmountParameters memory each = parameters.orders[i];
+        (orderIds, amountTotal) = _placeMakerOrderInBatch(parameters.recipient, parameters.zero, parameters.orders);
+        _processPlaceOrderReceiveAndCallback(parameters.zero, amountTotal, data);
+    }
 
-            _processPlaceOrder(orderId, parameters.recipient, parameters.zero, each.boundaryLower, each.amount);
+    function _placeMakerOrderInBatch(
+        address recipient,
+        bool zero,
+        BoundaryLowerWithAmountParameters[] memory parameters
+    ) private returns (uint256[] memory orderIds, uint256 amountTotal) {
+        orderIds = new uint256[](parameters.length);
+        uint256 orderId = _nextOrderIdInBatch(parameters.length);
+
+        for (uint256 i = 0; i < parameters.length; ) {
+            BoundaryLowerWithAmountParameters memory each = parameters[i];
+
+            _processPlaceOrder(orderId, recipient, zero, each.boundaryLower, each.amount);
             orderIds[i] = orderId;
 
             unchecked {
@@ -125,8 +157,6 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
 
             amountTotal += each.amount;
         }
-
-        _processPlaceOrderReceiveAndCallback(parameters.zero, amountTotal, data);
     }
 
     function _processPlaceOrder(
@@ -560,11 +590,11 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         uint256 balance1Before;
 
         if (amount0 > 0) {
-            balance0Before = IERC20(token0).balanceOf(address(this));
+            balance0Before = _balance0();
             SafeERC20.safeTransfer(IERC20(token0), recipient, amount0);
         }
         if (amount1 > 0) {
-            balance1Before = IERC20(token1).balanceOf(address(this));
+            balance1Before = _balance1();
             SafeERC20.safeTransfer(IERC20(token1), recipient, amount1);
         }
 
@@ -573,11 +603,11 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         uint128 paid0;
         uint128 paid1;
         if (amount0 > 0) {
-            uint256 balance0After = IERC20(token0).balanceOf(address(this));
+            uint256 balance0After = _balance0();
             paid0 = (balance0After - balance0Before).toUint128();
         }
         if (amount1 > 0) {
-            uint256 balance1After = IERC20(token1).balanceOf(address(this));
+            uint256 balance1After = _balance1();
             paid1 = (balance1After - balance1Before).toUint128();
         }
 
@@ -616,6 +646,14 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             }
             SafeERC20.safeTransfer(IERC20(token1), recipient, amount1);
         }
+    }
+
+    function _balance0() private view returns (uint256) {
+        return IERC20(token0).balanceOf(address(this));
+    }
+
+    function _balance1() private view returns (uint256) {
+        return IERC20(token1).balanceOf(address(this));
     }
 
     /// @dev Returns the next order id
