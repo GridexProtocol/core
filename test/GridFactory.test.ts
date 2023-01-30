@@ -51,6 +51,15 @@ describe("GridFactory", () => {
     });
 
     describe("#createGrid", () => {
+        it("should reverted with the right error if not initialized", async () => {
+            const {weth} = await loadFixture(deployFixture);
+            const gridFactoryFactory = await ethers.getContractFactory("GridFactory");
+            const gridFactory = await gridFactoryFactory.deploy(weth.address, [1, 2, 3]);
+            await expect(gridFactory.createGrid(weth.address, gridFactory.address, Resolution.LOW)).to.be.revertedWith(
+                "GF_NI"
+            );
+        });
+
         it("should reverted with the right error if tokenA is not a contract", async () => {
             const {gridFactory} = await loadFixture(deployFixture);
             await expect(

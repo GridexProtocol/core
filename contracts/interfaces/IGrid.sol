@@ -91,10 +91,18 @@ interface IGrid {
 
     ///==================================== Grid Actions ====================================
 
-    /// @notice Sets the initial price for the grid
-    /// @dev Price is represented as an amountToken1/amountToken0 Q64.96 value
-    /// @param priceX96 The initial price of the grid, as a Q64.96
-    function initialize(uint160 priceX96) external;
+    /// @notice Initializes the grid with the given parameters
+    /// @dev The caller of this method receives a callback in the form of
+    /// IGridPlaceMakerOrderCallback#gridexPlaceMakerOrderCallback.
+    /// When initializing the grid, token0 and token1's liquidity must be added simultaneously.
+    /// @param parameters The parameters used to initialize the grid
+    /// @param data Any data to be passed through to the callback
+    /// @return orderIds0 The unique identifiers of the orders for token0
+    /// @return orderIds1 The unique identifiers of the orders for token1
+    function initialize(
+        IGridParameters.InitializeParameters memory parameters,
+        bytes calldata data
+    ) external returns (uint256[] memory orderIds0, uint256[] memory orderIds1);
 
     /// @notice Swaps token0 for token1, or vice versa
     /// @dev The caller of this method receives a callback in the form of IGridSwapCallback#gridexSwapCallback
@@ -118,14 +126,22 @@ interface IGrid {
     ) external returns (int256 amount0, int256 amount1);
 
     /// @notice Places a maker order on the grid
+    /// @dev The caller of this method receives a callback in the form of
+    /// IGridPlaceMakerOrderCallback#gridexPlaceMakerOrderCallback
+    /// @param parameters The parameters used to place the maker order
     /// @param data Any data to be passed through to the callback
+    /// @return orderId The unique identifier of the order
     function placeMakerOrder(
         IGridParameters.PlaceOrderParameters memory parameters,
         bytes calldata data
     ) external returns (uint256 orderId);
 
     /// @notice Places maker orders on the grid
+    /// @dev The caller of this method receives a callback in the form of
+    /// IGridPlaceMakerOrderCallback#gridexPlaceMakerOrderCallback
+    /// @param parameters The parameters used to place the maker orders
     /// @param data Any data to be passed through to the callback
+    /// @return orderIds The unique identifiers of the orders
     function placeMakerOrderInBatch(
         IGridParameters.PlaceOrderInBatchParameters memory parameters,
         bytes calldata data

@@ -15,6 +15,12 @@ describe("Grid", () => {
 
         const gridTestHelper = await deployGridTestHelper(gridFactory.address, weth.address);
 
+        await Promise.all([
+            weth.approve(gridTestHelper.address, 10n ** 18n * 10000n),
+            usdc.approve(gridTestHelper.address, 10n ** 18n * 10000n),
+            usdt.approve(gridTestHelper.address, 10n ** 18n * 10000n),
+        ]);
+
         await gridFactory.createGrid(weth.address, usdc.address, Resolution.MEDIUM);
 
         await gridFactory.createGrid(usdc.address, usdt.address, Resolution.MEDIUM);
@@ -23,19 +29,39 @@ describe("Grid", () => {
             "Grid",
             await computeAddress(gridFactory.address, weth.address, usdc.address, Resolution.MEDIUM)
         );
-        await ETHToERC20Grid.initialize(RESOLUTION_X96);
+
+        const [signer] = await ethers.getSigners();
+        const parameters = {
+            tokenA: weth.address,
+            tokenB: usdc.address,
+            resolution: Resolution.MEDIUM,
+            recipient: signer.address,
+            priceX96: RESOLUTION_X96,
+            orders0: [
+                {
+                    boundaryLower: 0,
+                    amount: 1n,
+                },
+            ],
+            orders1: [
+                {
+                    boundaryLower: 0n,
+                    amount: 1n,
+                },
+            ],
+        };
+        await gridTestHelper.initialize(parameters, {value: 1n});
+        await ETHToERC20Grid.settleMakerOrderAndCollectInBatch(signer.address, [1, 2], true);
 
         const ERC20ToERC20Grid = await ethers.getContractAt(
             "Grid",
             await computeAddress(gridFactory.address, usdc.address, usdt.address, Resolution.MEDIUM)
         );
-        await ERC20ToERC20Grid.initialize(RESOLUTION_X96);
 
-        await Promise.all([
-            weth.approve(gridTestHelper.address, 10n ** 18n * 10000n),
-            usdc.approve(gridTestHelper.address, 10n ** 18n * 10000n),
-            usdt.approve(gridTestHelper.address, 10n ** 18n * 10000n),
-        ]);
+        parameters.tokenA = usdc.address;
+        parameters.tokenB = usdt.address;
+        await gridTestHelper.initialize(parameters);
+        await ERC20ToERC20Grid.settleMakerOrderAndCollectInBatch(signer.address, [1, 2], false);
 
         return {weth, usdc, usdt, gridFactory, gridTestHelper, ETHToERC20Grid, ERC20ToERC20Grid};
     };
@@ -49,7 +75,7 @@ describe("Grid", () => {
     });
 
     it("#initialize", async () => {
-        const {usdc, usdt, gridFactory} = await loadFixture(deployFixture);
+        const {usdc, usdt, gridFactory, gridTestHelper} = await loadFixture(deployFixture);
 
         await gridFactory.createGrid(usdc.address, usdt.address, Resolution.HIGH);
 
@@ -58,9 +84,26 @@ describe("Grid", () => {
             await computeAddress(gridFactory.address, usdc.address, usdt.address, Resolution.HIGH)
         );
 
-        const tx = await grid.initialize(RESOLUTION_X96);
-        const receipt = await tx.wait();
-        expect(receipt.gasUsed.toNumber()).toMatchSnapshot();
+        await gridTestHelper.initialize({
+            tokenA: usdc.address,
+            tokenB: usdt.address,
+            resolution: Resolution.HIGH,
+            recipient: ethers.constants.AddressZero,
+            priceX96: RESOLUTION_X96,
+            orders0: [
+                {
+                    boundaryLower: 0n,
+                    amount: 1n,
+                },
+            ],
+            orders1: [
+                {
+                    boundaryLower: 0n,
+                    amount: 1n,
+                },
+            ],
+        });
+        expect((await gridTestHelper.gasUsed()).toNumber()).toMatchSnapshot();
     });
 
     describe("#placeMakerOrder", () => {

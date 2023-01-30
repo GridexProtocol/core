@@ -2,7 +2,6 @@ import {ethers} from "hardhat";
 import {expect} from "./shared/expect";
 import {BigNumber} from "ethers";
 import {
-    createGridAndInitialize,
     encodePriceWithBaseAndQuote,
     expectBoundaryInitialized,
     formatBoundaryToBoundaryLower,
@@ -39,6 +38,9 @@ import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {IGridParameters} from "../typechain-types/contracts/interfaces/IGrid";
 
 describe("Grid", () => {
+    const startOrderId = 3;
+    const startBundleId = 3;
+
     async function deployNonStandardERC20() {
         const nonStandardERC20Factory = await ethers.getContractFactory("NonStandardERC20");
         const token0 = await nonStandardERC20Factory.deploy();
@@ -108,7 +110,30 @@ describe("Grid", () => {
     async function createGridAndInitializeGridFixture() {
         const {signer, otherAccount, boundaryMath, gridFactory, gridTestHelper, swapMath, grid, weth, usdc} =
             await deployAndCreateGridFixture();
-        await grid.initialize(encodePriceWithBaseAndQuote(weth.address, 1, usdc.address, 1644));
+        const priceX96 = encodePriceWithBaseAndQuote(weth.address, 1, usdc.address, 1644);
+        await gridTestHelper.initialize(
+            {
+                tokenA: weth.address,
+                tokenB: usdc.address,
+                resolution: Resolution.MEDIUM,
+                recipient: signer.address,
+                priceX96: priceX96,
+                orders0: [
+                    {
+                        boundaryLower: 220000,
+                        amount: 1n,
+                    },
+                ],
+                orders1: [
+                    {
+                        boundaryLower: 220000,
+                        amount: 1n,
+                    },
+                ],
+            },
+            {value: 1n}
+        );
+        await grid.settleMakerOrderAndCollectInBatch(signer.address, [1n, 2n], true);
         return {
             signer,
             otherAccount,
@@ -130,14 +155,131 @@ describe("Grid", () => {
 
         it("should revert with right error if price not in range", async () => {
             const {grid} = await loadFixture(deployAndCreateGridFixture);
-            await expect(grid.initialize(MIN_RATIO - 1n)).to.be.revertedWith("G_POR");
-            await expect(grid.initialize(MAX_RATIO + 1n)).to.be.revertedWith("G_POR");
+            await expect(
+                grid.initialize(
+                    {
+                        recipient: ethers.constants.AddressZero,
+                        priceX96: MIN_RATIO - 1n,
+                        orders0: [],
+                        orders1: [],
+                    },
+                    []
+                )
+            ).to.be.revertedWith("G_POR");
+            await expect(
+                grid.initialize(
+                    {
+                        recipient: ethers.constants.AddressZero,
+                        priceX96: MAX_RATIO + 1n,
+                        orders0: [],
+                        orders1: [],
+                    },
+                    []
+                )
+            ).to.be.revertedWith("G_POR");
+        });
+
+        it("should revert with right error if orders0 is empty", async () => {
+            const {grid} = await loadFixture(deployAndCreateGridFixture);
+            await expect(
+                grid.initialize(
+                    {
+                        recipient: ethers.constants.AddressZero,
+                        priceX96: RESOLUTION_X96,
+                        orders0: [],
+                        orders1: [
+                            {
+                                boundaryLower: 0n,
+                                amount: 1n,
+                            },
+                        ],
+                    },
+                    []
+                )
+            ).to.be.revertedWith("G_ONE");
+        });
+
+        it("should revert with right error if orders0 is empty", async () => {
+            const {grid} = await loadFixture(deployAndCreateGridFixture);
+            await expect(
+                grid.initialize(
+                    {
+                        recipient: ethers.constants.AddressZero,
+                        priceX96: RESOLUTION_X96,
+                        orders0: [
+                            {
+                                boundaryLower: 0n,
+                                amount: 1n,
+                            },
+                        ],
+                        orders1: [],
+                    },
+                    []
+                )
+            ).to.be.revertedWith("G_ONE");
         });
 
         it("should revert with right error if repeated initialize", async () => {
-            const {grid} = await loadFixture(deployAndCreateGridFixture);
-            await expect(grid.initialize(RESOLUTION_X96)).to.emit(grid, "Initialize").withArgs(RESOLUTION_X96, 0);
-            await expect(grid.initialize(RESOLUTION_X96)).to.be.revertedWith("G_GAI");
+            const {grid, weth, usdc, gridTestHelper} = await loadFixture(deployAndCreateGridFixture);
+            const parameters = {
+                tokenA: weth.address,
+                tokenB: usdc.address,
+                resolution: Resolution.MEDIUM,
+                recipient: ethers.constants.AddressZero,
+                priceX96: RESOLUTION_X96,
+                orders0: [
+                    {
+                        boundaryLower: 0n,
+                        amount: 1n,
+                    },
+                ],
+                orders1: [
+                    {
+                        boundaryLower: 0n,
+                        amount: 1n,
+                    },
+                ],
+            };
+            await expect(gridTestHelper.initialize(parameters, {value: 1n}))
+                .to.emit(grid, "Initialize")
+                .withArgs(RESOLUTION_X96, 0);
+            await expect(gridTestHelper.initialize(parameters, {value: 1n})).to.be.revertedWith("G_GAI");
+        });
+
+        it("should revert with right error if non standard erc20", async () => {
+            const {gridFactory, usdc, gridTestHelper} = await loadFixture(deployAndCreateGridFixture);
+            const {token0, token1} = await deployNonStandardERC20();
+
+            await token0.approve(gridTestHelper.address, 1n << 18n);
+            await token1.approve(gridTestHelper.address, 1n << 18n);
+
+            await gridFactory.createGrid(usdc.address, token0.address, Resolution.MEDIUM);
+            await gridFactory.createGrid(usdc.address, token1.address, Resolution.MEDIUM);
+
+            const parameters = {
+                tokenA: usdc.address,
+                tokenB: token0.address,
+                resolution: Resolution.MEDIUM,
+                recipient: ethers.constants.AddressZero,
+                priceX96: RESOLUTION_X96,
+                orders0: [
+                    {
+                        boundaryLower: 0n,
+                        amount: 1n,
+                    },
+                ],
+                orders1: [
+                    {
+                        boundaryLower: 0n,
+                        amount: 1n,
+                    },
+                ],
+            };
+
+            await expect(gridTestHelper.initialize(parameters)).to.revertedWith("G_TPF");
+
+            parameters.tokenB = token1.address;
+            await expect(gridTestHelper.initialize(parameters)).to.revertedWith("G_TPF");
         });
 
         describe("table tests", () => {
@@ -169,9 +311,34 @@ describe("Grid", () => {
             ];
             for (const test of tests) {
                 it(`initialize priceX96 at ${test.expectBoundary}`, async () => {
-                    const {grid, boundaryMath} = await loadFixture(deployAndCreateGridFixture);
+                    const {grid, boundaryMath, weth, usdc, gridTestHelper} = await loadFixture(
+                        deployAndCreateGridFixture
+                    );
                     const expectPriceX96 = await boundaryMath.getPriceX96AtBoundary(test.expectBoundary);
-                    await expect(grid.initialize(expectPriceX96))
+                    await expect(
+                        gridTestHelper.initialize(
+                            {
+                                tokenA: weth.address,
+                                tokenB: usdc.address,
+                                resolution: Resolution.MEDIUM,
+                                recipient: ethers.constants.AddressZero,
+                                priceX96: expectPriceX96,
+                                orders0: [
+                                    {
+                                        boundaryLower: 0n,
+                                        amount: 1n,
+                                    },
+                                ],
+                                orders1: [
+                                    {
+                                        boundaryLower: 0n,
+                                        amount: 1n,
+                                    },
+                                ],
+                            },
+                            {value: 1n}
+                        )
+                    )
                         .to.emit(grid, "Initialize")
                         .withArgs(expectPriceX96, test.expectBoundary);
                     const {priceX96, boundary} = await grid.slot0();
@@ -184,36 +351,42 @@ describe("Grid", () => {
 
     describe("#swap", () => {
         it("should revert with right error if not initialized", async () => {
-            const {signer, grid} = await loadFixture(deployAndCreateGridFixture);
+            const {grid} = await loadFixture(deployAndCreateGridFixture);
             await expect(grid.swap(ethers.constants.AddressZero, false, 1n, 0, [])).to.revertedWith("G_GL");
         });
 
         it("should revert with right error if amount specified is zero", async () => {
-            const {signer, grid} = await loadFixture(createGridAndInitializeGridFixture);
+            const {grid} = await loadFixture(createGridAndInitializeGridFixture);
             await expect(grid.swap(ethers.constants.AddressZero, true, 0, 0, [])).to.revertedWith("G_ASZ");
         });
 
         it("should success if exact in too small", async () => {
             const {otherAccount, grid, gridFactory, gridTestHelper, weth, usdc} = await deployAndCreateGridFixture();
-            await grid.initialize(RESOLUTION_X96);
-
-            const swapTest = await deploySwapTest(gridFactory.address, weth.address);
-
             const {token0} = await sortedToken(weth.address, usdc.address);
-            await gridTestHelper.placeMakerOrder(
+            await gridTestHelper.initialize(
                 {
-                    recipient: ethers.constants.AddressZero,
                     tokenA: weth.address,
                     tokenB: usdc.address,
                     resolution: Resolution.MEDIUM,
-                    zero: true,
-                    boundaryLower: -Resolution.MEDIUM,
-                    amount: 10n ** 18n,
+                    recipient: ethers.constants.AddressZero,
+                    priceX96: RESOLUTION_X96,
+                    orders0: [
+                        {
+                            boundaryLower: -Resolution.MEDIUM,
+                            amount: 10n ** 18n,
+                        },
+                    ],
+                    orders1: [
+                        {
+                            boundaryLower: -Resolution.MEDIUM,
+                            amount: 1n,
+                        },
+                    ],
                 },
-                {
-                    value: token0.toLowerCase() == weth.address.toLowerCase() ? 10n ** 18n : 0n,
-                }
+                {value: token0.toLowerCase() == weth.address.toLowerCase() ? 10n ** 18n : 1n}
             );
+
+            const swapTest = await deploySwapTest(gridFactory.address, weth.address);
 
             await expect(
                 swapTest.input({
@@ -233,21 +406,31 @@ describe("Grid", () => {
 
         it("should success if exact in - zero for one", async () => {
             const {signer, grid, gridTestHelper, weth, usdc} = await deployAndCreateGridFixture();
-            await grid.initialize(RESOLUTION_X96);
 
             const {token0, token1} = await sortedToken(weth.address, usdc.address);
-            await gridTestHelper.placeMakerOrder(
+
+            await gridTestHelper.initialize(
                 {
-                    recipient: ethers.constants.AddressZero,
                     tokenA: weth.address,
                     tokenB: usdc.address,
                     resolution: Resolution.MEDIUM,
-                    zero: false,
-                    boundaryLower: -Resolution.MEDIUM,
-                    amount: 10n ** 18n,
+                    recipient: ethers.constants.AddressZero,
+                    priceX96: RESOLUTION_X96,
+                    orders0: [
+                        {
+                            boundaryLower: -Resolution.MEDIUM,
+                            amount: 1n,
+                        },
+                    ],
+                    orders1: [
+                        {
+                            boundaryLower: -Resolution.MEDIUM,
+                            amount: 10n ** 18n,
+                        },
+                    ],
                 },
                 {
-                    value: token1.toLowerCase() == weth.address.toLowerCase() ? 10n ** 18n : 0n,
+                    value: token1.toLowerCase() == weth.address.toLowerCase() ? 10n ** 18n : 1n,
                 }
             );
 
@@ -420,7 +603,7 @@ describe("Grid", () => {
                         )
                     )
                         .to.emit(grid, "ChangeBundleForSwap")
-                        .withArgs(1, -1000, amountIn, feeAmount)
+                        .withArgs(startBundleId, -1000, amountIn, feeAmount)
                         .to.emit(grid, "Swap")
                         .withArgs(
                             gridTestHelper.address,
@@ -440,7 +623,7 @@ describe("Grid", () => {
                     // check bundle
                     {
                         const {makerAmountTotal, makerAmountRemaining, takerAmountRemaining, takerFeeAmountRemaining} =
-                            await grid.bundles(1);
+                            await grid.bundles(startBundleId);
                         expect(makerAmountTotal).to.equal(1000);
                         expect(makerAmountRemaining).to.equal(0);
                         expect(takerAmountRemaining).to.equal(amountIn);
@@ -530,7 +713,7 @@ describe("Grid", () => {
                         )
                     )
                         .to.emit(grid, "ChangeBundleForSwap")
-                        .withArgs(1, -499, amountIn, feeAmount)
+                        .withArgs(startBundleId, -499, amountIn, feeAmount)
                         .to.emit(grid, "Swap")
                         .withArgs(
                             gridTestHelper.address,
@@ -550,7 +733,7 @@ describe("Grid", () => {
                     // check bundle
                     {
                         const {makerAmountTotal, makerAmountRemaining, takerAmountRemaining, takerFeeAmountRemaining} =
-                            await grid.bundles(1);
+                            await grid.bundles(startBundleId);
                         expect(makerAmountTotal).to.equal(1000);
                         expect(makerAmountRemaining).to.equal(1000 - 499);
                         expect(takerAmountRemaining).to.equal(amountIn);
@@ -561,7 +744,7 @@ describe("Grid", () => {
                         const {bundle0Id, bundle1Id, makerAmountRemaining} = await grid.boundaries1(
                             boundaryLowerBefore - Resolution.MEDIUM
                         );
-                        expect(bundle0Id).to.equal(1);
+                        expect(bundle0Id).to.equal(startBundleId);
                         expect(bundle1Id).to.equal(0);
                         expect(makerAmountRemaining).to.equal(1000 - 499);
                     }
@@ -643,7 +826,7 @@ describe("Grid", () => {
                         )
                     )
                         .to.emit(grid, "ChangeBundleForSwap")
-                        .withArgs(1, -1000, amountIn, feeAmount)
+                        .withArgs(startBundleId, -1000, amountIn, feeAmount)
                         .to.emit(grid, "Swap")
                         .withArgs(
                             gridTestHelper.address,
@@ -663,7 +846,7 @@ describe("Grid", () => {
                     // check bundle
                     {
                         const {makerAmountTotal, makerAmountRemaining, takerAmountRemaining, takerFeeAmountRemaining} =
-                            await grid.bundles(1);
+                            await grid.bundles(startBundleId);
                         expect(makerAmountTotal).to.equal(1000);
                         expect(makerAmountRemaining).to.equal(0);
                         expect(takerAmountRemaining).to.equal(amountIn);
@@ -851,11 +1034,11 @@ describe("Grid", () => {
                                     await ctx.boundaryMath.getBoundaryAtPriceX96(priceX96After)
                                 )
                                 .to.emit(ctx.grid, "ChangeBundleForSwap")
-                                .withArgs(3, -1000, amountIn1, feeAmount1)
+                                .withArgs(startBundleId + 2, -1000, amountIn1, feeAmount1)
                                 .to.emit(ctx.grid, "ChangeBundleForSwap")
-                                .withArgs(2, -1000, amountIn2, feeAmount2)
+                                .withArgs(startBundleId + 1, -1000, amountIn2, feeAmount2)
                                 .to.emit(ctx.grid, "ChangeBundleForSwap")
-                                .withArgs(1, -500, amountIn3, feeAmount3);
+                                .withArgs(startBundleId, -500, amountIn3, feeAmount3);
                         });
 
                         it("slot0 should be update", async () => {
@@ -884,7 +1067,7 @@ describe("Grid", () => {
                             const tests = [
                                 {
                                     boundaryLowerDelta: -Resolution.MEDIUM * 2,
-                                    expectBundle0Id: 1,
+                                    expectBundle0Id: startBundleId,
                                     expectBundle1Id: 0,
                                     expectRemaining: 500,
                                 },
@@ -902,13 +1085,13 @@ describe("Grid", () => {
                                 },
                                 {
                                     boundaryLowerDelta: Resolution.MEDIUM,
-                                    expectBundle0Id: 4,
+                                    expectBundle0Id: 6,
                                     expectBundle1Id: 0,
                                     expectRemaining: 1000,
                                 },
                                 {
                                     boundaryLowerDelta: Resolution.MEDIUM * 2,
-                                    expectBundle0Id: 5,
+                                    expectBundle0Id: 7,
                                     expectBundle1Id: 0,
                                     expectRemaining: 1000,
                                 },
@@ -939,7 +1122,7 @@ describe("Grid", () => {
                         describe("bundle should be update", () => {
                             const tests = [
                                 {
-                                    bundleId: 1,
+                                    bundleId: startBundleId,
                                     expectMakerAmountTotal: 1000,
                                     expectMakerAmountRemaining: 500,
                                     expectUnfilledAccumulateRateX128: computeUnfilledAccumulateRateX128(
@@ -949,25 +1132,25 @@ describe("Grid", () => {
                                     ),
                                 },
                                 {
-                                    bundleId: 2,
+                                    bundleId: 1 + startBundleId,
                                     expectMakerAmountTotal: 1000,
                                     expectMakerAmountRemaining: 0,
                                     expectUnfilledAccumulateRateX128: 0,
                                 },
                                 {
-                                    bundleId: 3,
+                                    bundleId: 2 + startBundleId,
                                     expectMakerAmountTotal: 1000,
                                     expectMakerAmountRemaining: 0,
                                     expectUnfilledAccumulateRateX128: 0,
                                 },
                                 {
-                                    bundleId: 4,
+                                    bundleId: 3 + startBundleId,
                                     expectMakerAmountTotal: 1000,
                                     expectMakerAmountRemaining: 1000,
                                     expectUnfilledAccumulateRateX128: 1n << 128n,
                                 },
                                 {
-                                    bundleId: 5,
+                                    bundleId: 4 + startBundleId,
                                     expectMakerAmountTotal: 1000,
                                     expectMakerAmountRemaining: 1000,
                                     expectUnfilledAccumulateRateX128: 1n << 128n,
@@ -1070,9 +1253,52 @@ describe("Grid", () => {
             };
             beforeEach(async () => {
                 ctx = await deployAndCreateGridFixture();
-                await ctx.grid.initialize(RESOLUTION_X96);
 
                 const {token0, token1} = await sortedToken(ctx.weth.address, ctx.usdc.address);
+                await ctx.gridTestHelper.initialize(
+                    {
+                        tokenA: ctx.weth.address,
+                        tokenB: ctx.usdc.address,
+                        resolution: Resolution.MEDIUM,
+                        recipient: ctx.signer.address,
+                        priceX96: RESOLUTION_X96,
+                        orders0: [
+                            {
+                                boundaryLower: -Resolution.MEDIUM,
+                                amount: 1n,
+                            },
+                        ],
+                        orders1: [
+                            {
+                                boundaryLower: -Resolution.MEDIUM,
+                                amount: 10n ** 18n,
+                            },
+                        ],
+                    },
+                    {
+                        value: token1.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n : 1n,
+                    }
+                );
+
+                await ctx.grid.settleMakerOrderAndCollect(ctx.signer.address, 1, true);
+
+                await expect(
+                    ctx.gridTestHelper.exactOutput(
+                        {
+                            recipient: ethers.constants.AddressZero,
+                            tokenIn: token0,
+                            tokenOut: token1,
+                            resolution: Resolution.MEDIUM,
+                            amountOut: 10n ** 18n / 2n,
+                            amountInMaximum: 10n ** 18n,
+                            priceLimitX96: 0,
+                        },
+                        {
+                            value: token0.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n : 0n,
+                        }
+                    )
+                ).to.emit(ctx.grid, "Swap");
+
                 const placeMakerOrder = async function () {
                     await expect(
                         ctx.gridTestHelper.placeMakerOrder(
@@ -1091,25 +1317,6 @@ describe("Grid", () => {
                         )
                     ).to.emit(ctx.grid, "PlaceMakerOrder");
                 };
-
-                await placeMakerOrder();
-
-                await expect(
-                    ctx.gridTestHelper.exactOutput(
-                        {
-                            recipient: ethers.constants.AddressZero,
-                            tokenIn: token0,
-                            tokenOut: token1,
-                            resolution: Resolution.MEDIUM,
-                            amountOut: 10n ** 18n / 2n,
-                            amountInMaximum: 10n ** 18n,
-                            priceLimitX96: 0,
-                        },
-                        {
-                            value: token0.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n : 0n,
-                        }
-                    )
-                ).to.emit(ctx.grid, "Swap");
 
                 await placeMakerOrder();
             });
@@ -1151,7 +1358,7 @@ describe("Grid", () => {
                     );
                     await expect(txPromise).to.emit(ctx.grid, "ChangeBundleForSwap");
                     const {makerAmountTotal, makerAmountRemaining, takerAmountRemaining, takerFeeAmountRemaining} =
-                        await ctx.grid.bundles(2);
+                        await ctx.grid.bundles(3);
                     expect(makerAmountTotal).to.equal(10n ** 18n);
                     if (test.expectBundle1AmountOut != 0n) {
                         await expect(txPromise).to.emit(ctx.grid, "ChangeBundleForSwap");
@@ -1166,7 +1373,7 @@ describe("Grid", () => {
                             const {bundle0Id, bundle1Id, makerAmountRemaining} = await ctx.grid.boundaries1(
                                 -Resolution.MEDIUM
                             );
-                            expect(bundle0Id).to.equal(makerAmountRemaining.isZero() ? 0 : 2); // should active bundle1
+                            expect(bundle0Id).to.equal(makerAmountRemaining.isZero() ? 0 : 3); // should active bundle1
                             expect(bundle1Id).to.equal(0);
                             expect(makerAmountRemaining).to.equal(makerAmountTotal.toBigInt() - bundle1AmountOut);
                         }
@@ -1201,43 +1408,32 @@ describe("Grid", () => {
         describe("search next initialized boundary", () => {
             const initializedFn = async function (priceX96: bigint, _: boolean) {
                 let ctx = await deployAndCreateGridFixture();
-                await expect(ctx.grid.initialize(priceX96)).to.emit(ctx.grid, "Initialize");
-
-                const placeMakerOrder = async function (zero: boolean) {
-                    const {token0, token1} = await sortedToken(ctx.weth.address, ctx.usdc.address);
-                    const tokenIn = zero ? token0 : token1;
-                    await expect(
-                        ctx.gridTestHelper.placeMakerOrderInBatch(
-                            {
-                                recipient: ethers.constants.AddressZero,
-                                tokenA: ctx.weth.address,
-                                tokenB: ctx.usdc.address,
-                                resolution: Resolution.MEDIUM,
-                                zero: zero,
-                                orders: [
-                                    {
-                                        boundaryLower: -Resolution.MEDIUM,
-                                        amount: 10n ** 18n * 2n,
-                                    },
-                                    {
-                                        boundaryLower: 0,
-                                        amount: 10n ** 18n,
-                                    },
-                                    {
-                                        boundaryLower: Resolution.MEDIUM,
-                                        amount: 10n ** 18n * 2n,
-                                    },
-                                ],
-                            },
-                            {
-                                value: tokenIn.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n * 5n : 0n,
-                            }
-                        )
-                    ).to.emit(ctx.grid, "PlaceMakerOrder");
-                };
-
-                await placeMakerOrder(true);
-                await placeMakerOrder(false);
+                const orders = [
+                    {
+                        boundaryLower: -Resolution.MEDIUM,
+                        amount: 10n ** 18n * 2n,
+                    },
+                    {
+                        boundaryLower: 0,
+                        amount: 10n ** 18n,
+                    },
+                    {
+                        boundaryLower: Resolution.MEDIUM,
+                        amount: 10n ** 18n * 2n,
+                    },
+                ];
+                await ctx.gridTestHelper.initialize(
+                    {
+                        tokenA: ctx.weth.address,
+                        tokenB: ctx.usdc.address,
+                        resolution: Resolution.MEDIUM,
+                        recipient: ctx.signer.address,
+                        priceX96: priceX96,
+                        orders0: orders,
+                        orders1: orders,
+                    },
+                    {value: 10n ** 18n * 5n}
+                );
 
                 return ctx;
             };
@@ -1386,51 +1582,40 @@ describe("Grid", () => {
         describe("swap with price limit", () => {
             const initializedFn = async function (priceX96: bigint, _: boolean) {
                 let ctx = await deployAndCreateGridFixture();
-                await expect(ctx.grid.initialize(priceX96)).to.emit(ctx.grid, "Initialize");
-
-                const placeMakerOrder = async function (zero: boolean) {
-                    const {token0, token1} = await sortedToken(ctx.weth.address, ctx.usdc.address);
-                    const tokenIn = zero ? token0 : token1;
-                    await expect(
-                        ctx.gridTestHelper.placeMakerOrderInBatch(
-                            {
-                                recipient: ethers.constants.AddressZero,
-                                tokenA: ctx.weth.address,
-                                tokenB: ctx.usdc.address,
-                                resolution: Resolution.MEDIUM,
-                                zero: zero,
-                                orders: [
-                                    {
-                                        boundaryLower: -Resolution.MEDIUM * 10,
-                                        amount: 10n ** 18n * 3n,
-                                    },
-                                    {
-                                        boundaryLower: -Resolution.MEDIUM,
-                                        amount: 10n ** 18n * 2n,
-                                    },
-                                    {
-                                        boundaryLower: 0,
-                                        amount: 10n ** 18n,
-                                    },
-                                    {
-                                        boundaryLower: Resolution.MEDIUM,
-                                        amount: 10n ** 18n * 2n,
-                                    },
-                                    {
-                                        boundaryLower: Resolution.MEDIUM * 10,
-                                        amount: 10n ** 18n * 3n,
-                                    },
-                                ],
-                            },
-                            {
-                                value: tokenIn.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n * 11n : 0n,
-                            }
-                        )
-                    ).to.emit(ctx.grid, "PlaceMakerOrder");
-                };
-
-                await placeMakerOrder(true);
-                await placeMakerOrder(false);
+                const orders = [
+                    {
+                        boundaryLower: -Resolution.MEDIUM * 10,
+                        amount: 10n ** 18n * 3n,
+                    },
+                    {
+                        boundaryLower: -Resolution.MEDIUM,
+                        amount: 10n ** 18n * 2n,
+                    },
+                    {
+                        boundaryLower: 0,
+                        amount: 10n ** 18n,
+                    },
+                    {
+                        boundaryLower: Resolution.MEDIUM,
+                        amount: 10n ** 18n * 2n,
+                    },
+                    {
+                        boundaryLower: Resolution.MEDIUM * 10,
+                        amount: 10n ** 18n * 3n,
+                    },
+                ];
+                await ctx.gridTestHelper.initialize(
+                    {
+                        tokenA: ctx.weth.address,
+                        tokenB: ctx.usdc.address,
+                        resolution: Resolution.MEDIUM,
+                        recipient: ctx.signer.address,
+                        priceX96: priceX96,
+                        orders0: orders,
+                        orders1: orders,
+                    },
+                    {value: 10n ** 18n * 11n}
+                );
 
                 return ctx;
             };
@@ -1908,25 +2093,28 @@ describe("Grid", () => {
             await token0.approve(gridTestHelper.address, BigNumber.from(1).shl(18));
             await token1.approve(gridTestHelper.address, BigNumber.from(1).shl(18));
 
-            await createGridAndInitialize(
-                gridFactory,
-                token0.address,
-                token1.address,
-                Resolution.MEDIUM,
-                RESOLUTION_X96
-            );
-
+            await gridFactory.createGrid(token0.address, token1.address, Resolution.MEDIUM);
             await expect(
-                gridTestHelper.placeMakerOrder({
-                    recipient: ethers.constants.AddressZero,
+                gridTestHelper.initialize({
                     tokenA: token0.address,
                     tokenB: token1.address,
                     resolution: Resolution.MEDIUM,
-                    zero: true,
-                    boundaryLower: 0,
-                    amount: 1000,
+                    recipient: ethers.constants.AddressZero,
+                    priceX96: RESOLUTION_X96,
+                    orders0: [
+                        {
+                            boundaryLower: 0,
+                            amount: 1n,
+                        },
+                    ],
+                    orders1: [
+                        {
+                            boundaryLower: 0,
+                            amount: 1n,
+                        },
+                    ],
                 })
-            ).to.be.revertedWith("G_TPF");
+            ).to.revertedWith("G_TPF");
         });
 
         it("should revert with right error if insufficient balance", async () => {
@@ -1980,17 +2168,17 @@ describe("Grid", () => {
                     )
                         .to.emit(grid, "PlaceMakerOrder")
                         .withArgs(
-                            i + 1,
+                            i + startOrderId,
                             signer.address,
-                            1,
+                            startBundleId,
                             token0.toLowerCase() == usdc.address.toLowerCase(),
                             0,
                             1000
                         );
 
-                    const {owner, amount, bundleId} = await grid.orders(i + 1);
+                    const {owner, amount, bundleId} = await grid.orders(i + startOrderId);
                     expect(owner).to.equal(signer.address);
-                    expect(bundleId).to.equal(1);
+                    expect(bundleId).to.equal(startBundleId);
                     expect(amount).to.equal(1000);
                 }
             });
@@ -2030,9 +2218,16 @@ describe("Grid", () => {
                             )
                         )
                             .to.emit(grid, "PlaceMakerOrder")
-                            .withArgs(1, test.expectRecipient ?? signer.address, 1, false, 0, 10n ** 18n);
+                            .withArgs(
+                                startOrderId,
+                                test.expectRecipient ?? signer.address,
+                                startBundleId,
+                                false,
+                                0,
+                                10n ** 18n
+                            );
 
-                        const {owner} = await grid.orders(1);
+                        const {owner} = await grid.orders(startOrderId);
                         expect(owner).to.equal(test.expectRecipient ?? signer.address);
                     });
                 });
@@ -2059,9 +2254,9 @@ describe("Grid", () => {
                         )
                             .to.emit(grid, "PlaceMakerOrder")
                             .withArgs(
-                                i + 1,
+                                i + startOrderId,
                                 signer.address,
-                                i + 1,
+                                i + startBundleId,
                                 token0.toLowerCase() == usdc.address.toLowerCase(),
                                 i * Resolution.MEDIUM,
                                 1000
@@ -2075,7 +2270,7 @@ describe("Grid", () => {
                             makerAmountRemaining,
                             takerAmountRemaining,
                             takerFeeAmountRemaining,
-                        } = await grid.bundles(i + 1);
+                        } = await grid.bundles(i + startBundleId);
                         expect(boundaryLower).to.equal(i * Resolution.MEDIUM);
                         expect(zero).to.equal(token0.toLowerCase() == usdc.address.toLowerCase());
                         expect(makerAmountTotal).to.equal(1000);
@@ -2089,7 +2284,7 @@ describe("Grid", () => {
                         const [bundle0Id, bundle1Id, makerAmountRemainingForBoundary] = await boundaryFunc(
                             i * Resolution.MEDIUM
                         );
-                        expect(bundle0Id).to.equal(i + 1);
+                        expect(bundle0Id).to.equal(i + startBundleId);
                         expect(bundle1Id).to.equal(0);
                         expect(makerAmountRemainingForBoundary).to.equal(1000);
 
@@ -2126,11 +2321,11 @@ describe("Grid", () => {
                     await expect(gridTestHelper.placeMakerOrderInBatch(parameters)).to.emit(grid, "PlaceMakerOrder");
 
                     {
-                        const {owner} = await grid.orders(1);
+                        const {owner} = await grid.orders(startOrderId);
                         expect(owner).to.equal(signer.address);
                     }
                     {
-                        const {owner} = await grid.orders(10);
+                        const {owner} = await grid.orders(9 + startOrderId);
                         expect(owner).to.equal(signer.address);
                     }
 
@@ -2138,7 +2333,7 @@ describe("Grid", () => {
                     const boundaryFunc =
                         token0.toLowerCase() == usdc.address.toLowerCase() ? grid.boundaries0 : grid.boundaries1;
                     const [bundle0Id, bundle1Id, makerAmountRemainingForBoundary] = await boundaryFunc(0);
-                    expect(bundle0Id).to.equal(1);
+                    expect(bundle0Id).to.equal(startBundleId);
                     expect(bundle1Id).to.equal(0);
                     expect(makerAmountRemainingForBoundary).to.equal(1000 * 10);
 
@@ -2150,7 +2345,7 @@ describe("Grid", () => {
                         makerAmountRemaining,
                         takerAmountRemaining,
                         takerFeeAmountRemaining,
-                    } = await grid.bundles(1);
+                    } = await grid.bundles(startBundleId);
                     expect(boundaryLower).to.equal(0);
                     expect(zero).to.equal(token0.toLowerCase() == usdc.address.toLowerCase());
                     expect(makerAmountTotal).to.equal(1000 * 10);
@@ -2160,7 +2355,9 @@ describe("Grid", () => {
                 });
 
                 it("bundle balance overflow", async () => {
-                    const {gridFactory, weth, gridTestHelper} = await loadFixture(createGridAndInitializeGridFixture);
+                    const {signer, gridFactory, weth, gridTestHelper} = await loadFixture(
+                        createGridAndInitializeGridFixture
+                    );
 
                     const overflowToken = await deployERC20(
                         "Overflow Token",
@@ -2170,26 +2367,46 @@ describe("Grid", () => {
                     );
                     await overflowToken.approve(gridTestHelper.address, BigNumber.from(1).shl(18 + 160));
 
-                    const grid = await createGridAndInitialize(
-                        gridFactory,
-                        overflowToken.address,
-                        weth.address,
-                        Resolution.LOW,
-                        RESOLUTION_X96
-                    );
+                    await gridFactory.createGrid(overflowToken.address, weth.address, Resolution.LOW);
 
-                    const {token0} = await sortedToken(overflowToken.address, weth.address);
-                    await expect(
-                        gridTestHelper.placeMakerOrder({
-                            recipient: ethers.constants.AddressZero,
+                    await gridTestHelper.initialize(
+                        {
                             tokenA: overflowToken.address,
                             tokenB: weth.address,
                             resolution: Resolution.LOW,
-                            zero: token0.toLowerCase() == overflowToken.address.toLowerCase(),
-                            boundaryLower: 0,
-                            amount: BigNumber.from(1).shl(128).sub(1),
-                        })
-                    ).to.emit(grid, "PlaceMakerOrder");
+                            recipient: signer.address,
+                            priceX96: RESOLUTION_X96,
+                            orders0: [
+                                {
+                                    boundaryLower: 0,
+                                    amount: 1n,
+                                },
+                            ],
+                            orders1: [
+                                {
+                                    boundaryLower: 0,
+                                    amount: 1n,
+                                },
+                            ],
+                        },
+                        {value: 1n}
+                    );
+                    const grid = await ethers.getContractAt(
+                        "Grid",
+                        await computeAddress(gridFactory.address, overflowToken.address, weth.address, Resolution.LOW)
+                    );
+                    await grid.settleMakerOrderAndCollectInBatch(signer.address, [1, 2], true);
+
+                    const {token0} = await sortedToken(overflowToken.address, weth.address);
+                    await gridTestHelper.placeMakerOrder({
+                        recipient: ethers.constants.AddressZero,
+                        tokenA: overflowToken.address,
+                        tokenB: weth.address,
+                        resolution: Resolution.LOW,
+                        zero: token0.toLowerCase() == overflowToken.address.toLowerCase(),
+                        boundaryLower: 0,
+                        amount: BigNumber.from(1).shl(128).sub(1),
+                    });
 
                     await expect(
                         gridTestHelper.placeMakerOrder({
@@ -2248,15 +2465,15 @@ describe("Grid", () => {
                     expect(await expectBoundaryInitialized(grid, true, 0, Resolution.MEDIUM, true)).to.true;
 
                     // remove all liquidity
-                    await expect(grid.settleMakerOrder(1))
+                    await expect(grid.settleMakerOrder(startOrderId))
                         .to.emit(grid, "ChangeBundleForSettleOrder")
-                        .withArgs(1, -1000, -1000)
+                        .withArgs(startBundleId, -1000, -1000)
                         .to.emit(grid, "SettleMakerOrder")
-                        .withArgs(1, 1000, 0, 0);
+                        .withArgs(startOrderId, 1000, 0, 0);
                     {
                         expect(await expectBoundaryInitialized(grid, true, 0, Resolution.MEDIUM, false)).to.true;
                         const {bundle0Id, bundle1Id, makerAmountRemaining} = await grid.boundaries0(0);
-                        expect(bundle0Id).to.equal(1);
+                        expect(bundle0Id).to.equal(startBundleId);
                         expect(bundle1Id).to.equal(0);
                         expect(makerAmountRemaining).to.equal(0);
                     }
@@ -2280,7 +2497,7 @@ describe("Grid", () => {
                     ).to.emit(grid, "PlaceMakerOrder");
                     {
                         expect(await expectBoundaryInitialized(grid, true, 0, Resolution.MEDIUM, true)).to.true;
-                        const {makerAmountTotal, makerAmountRemaining} = await grid.bundles(1);
+                        const {makerAmountTotal, makerAmountRemaining} = await grid.bundles(startBundleId);
                         expect(makerAmountTotal).to.equal(999);
                         expect(makerAmountRemaining).to.equal(999);
                     }
@@ -2291,15 +2508,35 @@ describe("Grid", () => {
                         createGridAndInitializeGridFixture
                     );
                     const usdc = await deployERC20("usdc", "usdc", 6, 10n ** 18n * 10000n);
-                    const grid = await createGridAndInitialize(
-                        gridFactory,
-                        weth.address,
-                        usdc.address,
-                        Resolution.MEDIUM,
-                        RESOLUTION_X96
-                    );
-
                     await usdc.approve(gridTestHelper.address, 10n ** 18n * 10000n);
+                    await gridFactory.createGrid(weth.address, usdc.address, Resolution.MEDIUM);
+                    await gridTestHelper.initialize(
+                        {
+                            tokenA: weth.address,
+                            tokenB: usdc.address,
+                            resolution: Resolution.MEDIUM,
+                            recipient: signer.address,
+                            priceX96: RESOLUTION_X96,
+                            orders0: [
+                                {
+                                    boundaryLower: 220000,
+                                    amount: 1n,
+                                },
+                            ],
+                            orders1: [
+                                {
+                                    boundaryLower: 220000,
+                                    amount: 1n,
+                                },
+                            ],
+                        },
+                        {value: 1n}
+                    );
+                    const grid = await ethers.getContractAt(
+                        "Grid",
+                        await computeAddress(gridFactory.address, weth.address, usdc.address, Resolution.MEDIUM)
+                    );
+                    await grid.settleMakerOrderAndCollectInBatch(signer.address, [1, 2], true);
 
                     const {token0, token1} = await sortedToken(usdc.address, weth.address);
                     const placeMakerOrder = async function () {
@@ -2338,26 +2575,26 @@ describe("Grid", () => {
 
                     await expect(placeMakerOrder()).to.emit(grid, "PlaceMakerOrder");
 
-                    // reuse already initialized bundle 1
+                    // reuse already initialized bundle
                     await expect(placeMakerOrder()).to.emit(grid, "PlaceMakerOrder");
 
                     {
                         const {bundle0Id, bundle1Id, makerAmountRemaining} = await grid.boundaries0(0);
-                        expect(bundle0Id).to.equal(1);
-                        expect(bundle1Id).to.equal(2);
+                        expect(bundle0Id).to.equal(startBundleId);
+                        expect(bundle1Id).to.equal(startBundleId + 1);
                         expect(makerAmountRemaining).to.equal(2500);
                     }
 
                     // check bundle0
                     {
-                        const {makerAmountTotal, makerAmountRemaining} = await grid.bundles(1);
+                        const {makerAmountTotal, makerAmountRemaining} = await grid.bundles(startBundleId);
                         expect(makerAmountTotal).to.equal(1000);
                         expect(makerAmountRemaining).to.equal(500);
                     }
 
                     // check bundle1
                     {
-                        const {makerAmountTotal, makerAmountRemaining} = await grid.bundles(2);
+                        const {makerAmountTotal, makerAmountRemaining} = await grid.bundles(startBundleId + 1);
                         expect(makerAmountTotal).to.equal(2000);
                         expect(makerAmountRemaining).to.equal(2000);
                     }
@@ -2433,7 +2670,7 @@ describe("Grid", () => {
         describe("next order id should be incremented", () => {
             const tests = [1, 2, 3, 4, 5, 7, 9, 12, 20];
             tests.forEach((test) => {
-                it(`next order id should be ${test + 1}`, async () => {
+                it(`next order id should be ${test + startOrderId}`, async () => {
                     const {signer, weth, usdc, gridTestHelper, grid} = await loadFixture(
                         createGridAndInitializeGridFixture
                     );
@@ -2441,7 +2678,7 @@ describe("Grid", () => {
                     const orders: IGridParameters.BoundaryLowerWithAmountParametersStruct[] = [];
                     for (let i = 0; i < test; i++) {
                         orders.push({
-                            boundaryLower: Resolution.MEDIUM * i,
+                            boundaryLower: Resolution.MEDIUM * (i + 10),
                             amount: 10n ** 18n,
                         });
                     }
@@ -2467,7 +2704,7 @@ describe("Grid", () => {
                                 zero: weth.address.toLowerCase() == token0.toLowerCase(),
                                 orders: [
                                     {
-                                        boundaryLower: Resolution.MEDIUM * test,
+                                        boundaryLower: Resolution.MEDIUM * (test + 10),
                                         amount: 10n ** 18n,
                                     },
                                 ],
@@ -2477,11 +2714,11 @@ describe("Grid", () => {
                     )
                         .to.emit(grid, "PlaceMakerOrder")
                         .withArgs(
-                            test + 1,
+                            test + startOrderId,
                             signer.address,
-                            test + 1,
+                            test + startOrderId,
                             weth.address.toLowerCase() == token0.toLowerCase(),
-                            Resolution.MEDIUM * test,
+                            Resolution.MEDIUM * (test + 10),
                             10n ** 18n
                         );
                 });
@@ -2544,10 +2781,10 @@ describe("Grid", () => {
                 {value: 10n ** 18n}
             );
 
-            await grid.settleMakerOrder(1);
+            await grid.settleMakerOrder(startOrderId);
 
             for (let i = 0; i < 2; i++) {
-                await expect(grid.settleMakerOrder(1)).to.revertedWith("G_COO");
+                await expect(grid.settleMakerOrder(startOrderId)).to.revertedWith("G_COO");
             }
         });
 
@@ -2579,12 +2816,12 @@ describe("Grid", () => {
                 {value: 10n ** 18n * 3n}
             );
 
-            await grid.settleMakerOrder(1);
-            await grid.settleMakerOrder(2);
+            await grid.settleMakerOrder(startOrderId);
+            await grid.settleMakerOrder(1 + startOrderId);
 
             {
                 const {bundle0Id, bundle1Id, makerAmountRemaining} = await grid.boundaries0(0);
-                expect(bundle0Id).to.equal(1n);
+                expect(bundle0Id).to.equal(startOrderId);
                 expect(bundle1Id).to.equal(0n);
                 expect(makerAmountRemaining).to.equal(0n);
 
@@ -2595,7 +2832,7 @@ describe("Grid", () => {
                     makerAmountRemaining: bundleMakerAmountRemaining,
                     takerAmountRemaining,
                     takerFeeAmountRemaining,
-                } = await grid.bundles(1);
+                } = await grid.bundles(startBundleId);
 
                 expect(makerAmountTotal).to.equal(0);
                 expect(bundleMakerAmountRemaining).to.equal(0);
@@ -2605,7 +2842,7 @@ describe("Grid", () => {
 
             {
                 const {bundle0Id, bundle1Id, makerAmountRemaining} = await grid.boundaries0(5n);
-                expect(bundle0Id).to.equal(2n);
+                expect(bundle0Id).to.equal(1 + startBundleId);
                 expect(bundle1Id).to.equal(0n);
                 expect(makerAmountRemaining).to.equal(10n ** 18n);
 
@@ -2616,7 +2853,7 @@ describe("Grid", () => {
                     makerAmountRemaining: bundleMakerAmountRemaining,
                     takerAmountRemaining,
                     takerFeeAmountRemaining,
-                } = await grid.bundles(2);
+                } = await grid.bundles(1 + startBundleId);
 
                 expect(makerAmountTotal).to.equal(10n ** 18n);
                 expect(bundleMakerAmountRemaining).to.equal(10n ** 18n);
@@ -2641,18 +2878,16 @@ describe("Grid", () => {
                     "Grid",
                     await computeAddress(ctx.gridFactory.address, ctx.usdc.address, ctx.weth.address, Resolution.HIGH)
                 );
-                await ctx.grid.initialize(RESOLUTION_X96);
 
                 const {token0} = await sortedToken(ctx.usdc.address, ctx.weth.address);
-
-                await ctx.gridTestHelper.placeMakerOrderInBatch(
+                await ctx.gridTestHelper.initialize(
                     {
-                        recipient: ethers.constants.AddressZero,
                         tokenA: ctx.usdc.address,
                         tokenB: ctx.weth.address,
                         resolution: Resolution.HIGH,
-                        zero: true,
-                        orders: [
+                        recipient: ctx.signer.address,
+                        priceX96: RESOLUTION_X96,
+                        orders0: [
                             {
                                 boundaryLower: -Resolution.HIGH * 2,
                                 amount: 10n ** 18n,
@@ -2674,9 +2909,15 @@ describe("Grid", () => {
                                 amount: 10n ** 18n,
                             },
                         ],
+                        orders1: [
+                            {
+                                boundaryLower: 0,
+                                amount: 1n,
+                            },
+                        ],
                     },
                     {
-                        value: token0.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n * 5n : 0n,
+                        value: token0.toLowerCase() == ctx.weth.address.toLowerCase() ? 10n ** 18n * 5n : 1n,
                     }
                 );
             });
@@ -2753,13 +2994,13 @@ describe("Grid", () => {
                     )
                 )
                     .to.emit(ctx.grid, "PlaceMakerOrder")
-                    .withArgs(6, ctx.signer.address, 6, true, 0n, 10n ** 18n);
+                    .withArgs(7, ctx.signer.address, 7, true, 0n, 10n ** 18n);
 
                 await ctx.grid.settleMakerOrder(6);
 
                 const {bundle0Id, bundle1Id} = await ctx.grid.boundaries0(0);
                 expect(bundle0Id).to.equal(3);
-                expect(bundle1Id).to.equal(6);
+                expect(bundle1Id).to.equal(7);
             });
 
             it("bundle1 should be activate", async () => {
@@ -2793,19 +3034,19 @@ describe("Grid", () => {
                     )
                 )
                     .to.emit(ctx.grid, "PlaceMakerOrder")
-                    .withArgs(6, ctx.signer.address, 6, true, 0n, 10n ** 18n);
+                    .withArgs(7, ctx.signer.address, 7, true, 0n, 10n ** 18n);
 
                 {
                     const {bundle0Id, bundle1Id} = await ctx.grid.boundaries0(0);
                     expect(bundle0Id).to.equal(3);
-                    expect(bundle1Id).to.equal(6);
+                    expect(bundle1Id).to.equal(7);
                 }
 
                 await ctx.grid.settleMakerOrder(3);
 
                 {
                     const {bundle0Id, bundle1Id} = await ctx.grid.boundaries0(0);
-                    expect(bundle0Id).to.equal(6);
+                    expect(bundle0Id).to.equal(7);
                     expect(bundle1Id).to.equal(0);
                 }
             });
@@ -2840,7 +3081,7 @@ describe("Grid", () => {
                 {value: 10n ** 18n}
             );
 
-            await grid.settleMakerOrderAndCollect(otherAccount.address, 1, false);
+            await grid.settleMakerOrderAndCollect(otherAccount.address, startOrderId, false);
 
             {
                 const {token0, token1} = await grid.tokensOweds(signer.address);
@@ -2879,7 +3120,7 @@ describe("Grid", () => {
             );
 
             const recipient = "0x1111111111111111111111111111111111111111";
-            await grid.settleMakerOrderAndCollect(recipient, 1, true);
+            await grid.settleMakerOrderAndCollect(recipient, startOrderId, true);
             expect(await grid.provider.getBalance(recipient)).to.equal(10n ** 18n);
             expect(await weth.balanceOf(grid.address)).to.equal(0n);
         });
@@ -2927,7 +3168,7 @@ describe("Grid", () => {
                 {value: 10n ** 18n * 2n}
             );
 
-            await grid.settleMakerOrderAndCollectInBatch(otherAccount.address, [1, 2], false);
+            await grid.settleMakerOrderAndCollectInBatch(otherAccount.address, [3, 4], false);
 
             {
                 const {token0, token1} = await grid.tokensOweds(signer.address);
@@ -2973,7 +3214,7 @@ describe("Grid", () => {
 
             const {token0} = await sortedToken(weth.address, usdc.address);
             const erc20 = await ethers.getContractAt("IERC20", token0);
-            await expect(grid.settleMakerOrderAndCollectInBatch(signer.address, [1, 2], false))
+            await expect(grid.settleMakerOrderAndCollectInBatch(signer.address, [3, 4], false))
                 .to.emit(erc20, "Transfer")
                 .withArgs(grid.address, signer.address, 10n ** 18n * 2n);
         });
@@ -3005,7 +3246,7 @@ describe("Grid", () => {
             );
 
             const recipient = usdc.address;
-            await grid.settleMakerOrderAndCollectInBatch(recipient, [1, 2], true);
+            await grid.settleMakerOrderAndCollectInBatch(recipient, [3, 4], true);
             expect(await grid.provider.getBalance(recipient)).to.equal(10n ** 18n * 2n);
             expect(await weth.balanceOf(grid.address)).to.equal(0n);
         });
