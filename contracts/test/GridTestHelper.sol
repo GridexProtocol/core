@@ -34,6 +34,39 @@ contract GridTestHelper is IGridPlaceMakerOrderCallback, IGridSwapCallback, Abst
         }
     }
 
+    struct InitializeParameters {
+        address tokenA;
+        address tokenB;
+        int24 resolution;
+        uint160 priceX96;
+        address recipient;
+        IGridParameters.BoundaryLowerWithAmountParameters[] orders0;
+        IGridParameters.BoundaryLowerWithAmountParameters[] orders1;
+    }
+
+    function initialize(InitializeParameters calldata parameters) external payable {
+        uint256 gasBefore = gasleft();
+
+        GridAddress.GridKey memory gridKey = GridAddress.gridKey(
+            parameters.tokenA,
+            parameters.tokenB,
+            parameters.resolution
+        );
+
+        IGrid grid = IGrid(GridAddress.computeAddress(gridFactory, gridKey));
+        grid.initialize(
+            IGridParameters.InitializeParameters({
+                priceX96: parameters.priceX96,
+                recipient: parameters.recipient,
+                orders0: parameters.orders0,
+                orders1: parameters.orders1
+            }),
+            abi.encode(PlaceMakerOrderCalldata(gridKey, _msgSender()))
+        );
+
+        gasUsed = gasBefore - gasleft();
+    }
+
     struct PlaceMakerOrderParameters {
         address tokenA;
         address tokenB;

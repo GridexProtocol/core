@@ -35,7 +35,6 @@ describe("PriceOracle", () => {
             "Grid",
             await computeAddress(gridFactory.address, token0.address, token1.address, Resolution.MEDIUM)
         );
-        await mediumGrid.initialize(RESOLUTION_X96);
 
         const swapTest = await deploySwapTest(gridFactory.address, weth9Address);
         const gridTestHelper = await deployGridTestHelper(gridFactory.address, weth9Address);
@@ -47,13 +46,13 @@ describe("PriceOracle", () => {
             token1.approve(gridTestHelper.address, 10n ** 18n * 1000000n),
         ]);
 
-        await gridTestHelper.placeMakerOrderInBatch({
+        await gridTestHelper.initialize({
             tokenA: token0.address,
             tokenB: token1.address,
             resolution: Resolution.MEDIUM,
             recipient: ethers.constants.AddressZero,
-            zero: true,
-            orders: [
+            priceX96: RESOLUTION_X96,
+            orders0: [
                 {
                     boundaryLower: -Resolution.MEDIUM * 6,
                     amount: 10n ** 18n * 1000n,
@@ -104,6 +103,12 @@ describe("PriceOracle", () => {
                 },
                 {
                     boundaryLower: Resolution.MEDIUM * 6,
+                    amount: 10n ** 18n * 1000n,
+                },
+            ],
+            orders1: [
+                {
+                    boundaryLower: 0,
                     amount: 10n ** 18n * 1000n,
                 },
             ],
