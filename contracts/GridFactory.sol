@@ -42,7 +42,16 @@ contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
     }
 
     /// @inheritdoc IGridFactory
+    function concatGridSuffixCreationCode(bytes memory gridSuffixCreationCode) external override onlyOwner {
+        _concatGridSuffixCreationCode(gridSuffixCreationCode);
+        renounceOwnership();
+    }
+
+    /// @inheritdoc IGridFactory
     function createGrid(address tokenA, address tokenB, int24 resolution) external override returns (address grid) {
+        // GF_NI: not initialized
+        require(owner() == address(0), "GF_NI");
+
         // GF_NC: not contract
         require(Address.isContract(tokenA), "GF_NC");
         require(Address.isContract(tokenB), "GF_NC");
@@ -61,11 +70,5 @@ contract GridFactory is IGridFactory, Context, GridDeployer, Ownable {
         grids[tokenA][tokenB][resolution] = grid;
         grids[tokenB][tokenA][resolution] = grid;
         emit GridCreated(token0, token1, resolution, grid);
-    }
-
-    /// @inheritdoc IGridFactory
-    function concatGridSuffixCreationCode(bytes memory gridSuffixCreationCode) external override onlyOwner {
-        _concatGridSuffixCreationCode(gridSuffixCreationCode);
-        renounceOwnership();
     }
 }
