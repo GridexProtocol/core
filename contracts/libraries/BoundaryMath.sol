@@ -215,8 +215,8 @@ library BoundaryMath {
             int256 log10001 = log_2 * 127869479499801913173570;
             // 128.128 number
 
-            int24 boundaryLow = int24((log10001 - 3402992956809132418596140100660247210) >> 128);
-            int24 boundaryHi = int24((log10001 + 291339464771989622907027621153398088495) >> 128);
+            int24 boundaryLow = int24((log10001 - 1701496478404566090792001455681771637) >> 128);
+            int24 boundaryHi = int24((log10001 + 289637967442836604689790891002483458648) >> 128);
 
             boundary = boundaryLow == boundaryHi ? boundaryLow : getPriceX96AtBoundary(boundaryHi) <= priceX96
                 ? boundaryHi
