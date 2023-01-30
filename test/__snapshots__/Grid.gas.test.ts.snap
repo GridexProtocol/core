@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Grid #createGrid 1`] = `6714340`;
+exports[`Grid #createGrid 1`] = `6712940`;
 
-exports[`Grid #initialize 1`] = `501412`;
+exports[`Grid #initialize 1`] = `501599`;
 
 exports[`Grid #placeMakerOrder ERC20 1`] = `168571`;
 

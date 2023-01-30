@@ -85,8 +85,14 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
 
         IPriceOracle(priceOracle).register(token0, token1, resolution);
 
-        // emits an Initialize event before placing orders
         int24 boundary = BoundaryMath.getBoundaryAtPriceX96(parameters.priceX96);
+        slot0 = Slot0({
+            priceX96: parameters.priceX96,
+            boundary: boundary,
+            blockTimestamp: uint32(block.timestamp),
+            unlocked: false // still keep the grid locked to prevent reentrancy
+        });
+        // emits an Initialize event before placing orders
         emit Initialize(parameters.priceX96, boundary);
 
         // places orders for token0 and token1
@@ -105,12 +111,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
             "G_TPF"
         );
 
-        slot0 = Slot0({
-            priceX96: parameters.priceX96,
-            boundary: boundary,
-            blockTimestamp: uint32(block.timestamp),
-            unlocked: true
-        });
+        slot0.unlocked = true;
     }
 
     /// @inheritdoc IGrid
