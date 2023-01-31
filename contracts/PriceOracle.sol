@@ -167,10 +167,11 @@ contract PriceOracle is IPriceOracle {
         } else {
             // p = p_b + (p_a - p_b) / (t_a - t_b) * (t - t_b)
             unchecked {
-                uint32 delta = targetTimestamp - beforePriceData.blockTimestamp;
-                int56 afterBoundary = (afterPriceData.boundaryCumulative - beforePriceData.boundaryCumulative) /
-                    int56(uint56(afterPriceData.blockTimestamp - beforePriceData.blockTimestamp));
-                return beforePriceData.boundaryCumulative + afterBoundary * int56(uint56(delta));
+                uint32 timestampDelta = targetTimestamp - beforePriceData.blockTimestamp;
+                int88 boundaryCumulativeDelta = (int88(uint88(timestampDelta)) *
+                    (afterPriceData.boundaryCumulative - beforePriceData.boundaryCumulative)) /
+                    int32(afterPriceData.blockTimestamp - beforePriceData.blockTimestamp);
+                return beforePriceData.boundaryCumulative + int56(boundaryCumulativeDelta);
             }
         }
     }
