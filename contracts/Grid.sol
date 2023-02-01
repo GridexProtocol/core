@@ -549,7 +549,7 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
 
         // removes liquidity from boundary
         Boundary storage boundary = _boundaryAt(bundle.boundaryLower, zero);
-        uint256 bundle0Id = boundary.bundle0Id;
+        uint64 bundle0Id = boundary.bundle0Id;
         if (bundle0Id == order.bundleId || boundary.bundle1Id == order.bundleId) {
             uint128 makerAmountRemaining = boundary.makerAmountRemaining - makerAmountOut;
             boundary.makerAmountRemaining = makerAmountRemaining;
