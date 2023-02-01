@@ -19,25 +19,21 @@ describe("GridFactory", () => {
                     name: "resolution for 1",
                     resolution: 1,
                     expectTakerFee: 0.0001,
-                    expectMakerFee: -0.00008,
                 },
                 {
                     name: "resolution for 5",
                     resolution: 5,
                     expectTakerFee: 0.0005,
-                    expectMakerFee: -0.0004,
                 },
                 {
                     name: "resolution for 30",
                     resolution: 30,
                     expectTakerFee: 0.003,
-                    expectMakerFee: -0.0024,
                 },
                 {
                     name: "resolution for 100",
                     resolution: 100,
                     expectTakerFee: 0,
-                    expectMakerFee: 0,
                 },
             ];
             tests.forEach(async (test) => {
