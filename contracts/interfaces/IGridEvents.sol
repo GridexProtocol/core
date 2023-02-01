@@ -20,7 +20,7 @@ interface IGridEvents {
     event PlaceMakerOrder(
         uint256 indexed orderId,
         address indexed recipient,
-        uint256 indexed bundleId,
+        uint64 indexed bundleId,
         bool zero,
         int24 boundaryLower,
         uint128 amount
@@ -44,7 +44,7 @@ interface IGridEvents {
     /// @param bundleId The unique identifier of the bundle
     /// @param makerAmountTotal The change in the total maker amount in the bundle
     /// @param makerAmountRemaining The change in the remaining maker amount in the bundle
-    event ChangeBundleForSettleOrder(uint256 indexed bundleId, int256 makerAmountTotal, int256 makerAmountRemaining);
+    event ChangeBundleForSettleOrder(uint64 indexed bundleId, int256 makerAmountTotal, int256 makerAmountRemaining);
 
     /// @notice Emitted when a taker is swapping
     /// @dev When the bundle's remaining maker amount becomes 0, the bundle is closed
@@ -53,7 +53,7 @@ interface IGridEvents {
     /// @param amountIn The change in the remaining taker amount in the bundle
     /// @param takerFeeAmountIn The change in the remaining taker fee amount in the bundle
     event ChangeBundleForSwap(
-        uint256 indexed bundleId,
+        uint64 indexed bundleId,
         int256 makerAmountRemaining,
         uint256 amountIn,
         uint128 takerFeeAmountIn

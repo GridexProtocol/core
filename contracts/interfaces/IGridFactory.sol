@@ -15,13 +15,6 @@ interface IGridFactory {
     /// @param grid The address of the deployed grid
     event GridCreated(address indexed token0, address indexed token1, int24 indexed resolution, address grid);
 
-    struct ResolutionConfig {
-        /// @dev The taker fee, denominated in hundredths of a bip (i.e. 1e-6)
-        int24 takerFee;
-        /// @dev The maker fee, denominated in hundredths of a bip (i.e. 1e-6)
-        int24 makerFee;
-    }
-
     /// @notice Returns the taker fee for the given resolution if enabled. Else, returns 0.
     /// @dev A resolution can never be removed, so this value should be hard coded or cached in the calling context
     /// @param resolution The enabled resolution
