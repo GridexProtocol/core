@@ -30,8 +30,8 @@ library BundleMath {
 
             parameters.takerFeeForMakerAmountUsed = takerFeeForMakerAmount;
         } else {
+            parameters.amountInUsed = parameters.amountOutUsed * amountIn / amountOut; // amountOutUsed * amountIn may overflow here
             unchecked {
-                parameters.amountInUsed = uint128((uint256(parameters.amountOutUsed) * amountIn) / amountOut);
                 parameters.amountInRemaining = amountIn - parameters.amountInUsed;
 
                 parameters.amountOutRemaining = amountOut - parameters.amountOutUsed;
