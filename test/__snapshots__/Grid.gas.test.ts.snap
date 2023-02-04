@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Grid #createGrid 1`] = `6715690`;
+exports[`Grid #createGrid 1`] = `6716090`;
 
 exports[`Grid #initialize 1`] = `501599`;
 
