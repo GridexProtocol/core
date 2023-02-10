@@ -340,12 +340,8 @@ contract Grid is IGrid, IGridStructs, IGridEvents, IGridParameters, Context {
         SwapState memory state
     ) private returns (bool stopSwap) {
         SwapForBoundaryState memory swapForBoundaryState = SwapForBoundaryState({
-            boundaryLowerPriceX96: state.initializedBoundaryLowerPriceX96 == 0
-                ? BoundaryMath.getPriceX96AtBoundary(boundaryNext)
-                : state.initializedBoundaryLowerPriceX96,
-            boundaryUpperPriceX96: state.initializedBoundaryUpperPriceX96 == 0
-                ? BoundaryMath.getPriceX96AtBoundary(boundaryNext + resolution)
-                : state.initializedBoundaryUpperPriceX96,
+            boundaryLowerPriceX96: state.initializedBoundaryLowerPriceX96,
+            boundaryUpperPriceX96: state.initializedBoundaryUpperPriceX96,
             boundaryPriceX96: 0,
             priceX96: 0
         });

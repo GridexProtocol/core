@@ -61,21 +61,44 @@ library BoundaryBitmap {
     {
         int24 boundaryUpper = boundaryLower + resolution;
         if (currentBoundaryInitialized) {
-            uint160 boundaryLowerPriceX96;
-            uint160 boundaryUpperPriceX96;
-            if (
-                (lte && (boundaryLowerPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryLower)) < priceX96) ||
-                (!lte && (boundaryUpperPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryUpper)) > priceX96)
-            ) {
-                return (boundaryLower, true, boundaryLowerPriceX96, boundaryUpperPriceX96);
+            if (lte) {
+                uint160 boundaryLowerPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryLower);
+                if (boundaryLowerPriceX96 < priceX96) {
+                    return (
+                        boundaryLower,
+                        true,
+                        boundaryLowerPriceX96,
+                        BoundaryMath.getPriceX96AtBoundary(boundaryUpper)
+                    );
+                }
+            } else {
+                uint160 boundaryUpperPriceX96 = BoundaryMath.getPriceX96AtBoundary(boundaryUpper);
+                if (boundaryUpperPriceX96 > priceX96) {
+                    return (
+                        boundaryLower,
+                        true,
+                        BoundaryMath.getPriceX96AtBoundary(boundaryLower),
+                        boundaryUpperPriceX96
+                    );
+                }
             }
         }
 
         // When the price is rising and the current boundary coincides with the upper boundary, start searching
         // from the lower boundary. Otherwise, start searching from the current boundary
         boundary = !lte && boundaryUpper == boundary ? boundaryLower : boundary;
-        while (BoundaryMath.isInRange(boundary) && !initialized) {
+        while (BoundaryMath.isInRange(boundary)) {
             (next, initialized) = nextInitializedBoundaryWithinOneWord(self, boundary, resolution, lte);
+            if (initialized) {
+                unchecked {
+                    return (
+                        next,
+                        true,
+                        BoundaryMath.getPriceX96AtBoundary(next),
+                        BoundaryMath.getPriceX96AtBoundary(next + resolution)
+                    );
+                }
+            }
             boundary = next;
         }
     }
