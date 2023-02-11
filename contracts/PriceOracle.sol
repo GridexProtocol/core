@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.8;
+pragma solidity =0.8.9;
 
 import "./interfaces/IGrid.sol";
 import "./interfaces/IPriceOracle.sol";
