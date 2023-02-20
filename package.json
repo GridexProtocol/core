@@ -1,6 +1,6 @@
 {
     "name": "@gridexprotocol/core",
-    "version": "0.4.4",
+    "version": "0.4.5",
     "author": "Gridex",
     "description": "Core smart contracts of Gridex Protocol",
     "license": "BUSL-1.1",
