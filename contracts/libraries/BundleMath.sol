@@ -105,6 +105,11 @@ library BundleMath {
             makerAmountTotalNew = makerAmountTotal - makerAmountRaw;
             self.makerAmountTotal = makerAmountTotalNew;
 
+            // This calculation won't overflow because makerAmountRaw divided by
+            // makerAmountTotal will always have a value between 0 and 1 (excluding 0), and
+            // multiplying that by a uint128 value won't result in an overflow. So the
+            // calculation is designed to work within the constraints of the data types being used,
+            // without exceeding their maximum values.
             makerAmountOut = uint128((uint256(makerAmountRaw) * makerAmountRemaining) / makerAmountTotal);
             self.makerAmountRemaining = makerAmountRemaining - makerAmountOut;
 
