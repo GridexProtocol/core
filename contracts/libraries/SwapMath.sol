@@ -58,6 +58,8 @@ library SwapMath {
                     priceCurrentX96,
                     boundaryPriceX96,
                     priceLimitX96,
+                    // The converted value will not overflow. The maximum amount of liquidity
+                    // allowed in each boundary is less than or equal to uint128.
                     absAmountRemaining > makerAmount ? makerAmount : uint128(absAmountRemaining),
                     makerAmount,
                     takerFeePips
@@ -141,6 +143,7 @@ library SwapMath {
             amountOut = numerator / (FixedPointX96.Q_2 + denominator);
         } else {
             // ((2 * takerAmountIn * (1/priceCurrent) / (2 - (1/priceMax - 1/priceCurrent) * takerAmountIn / makerAmount))
+            // Specifically divide first, then multiply to ensure that the amountOut is smaller
             uint256 numerator = 2 * takerAmountInWithoutFee * (FixedPointX192.Q / priceCurrentX96);
 
             uint256 reversePriceDeltaX96 = Math.ceilDiv(
