@@ -13,6 +13,7 @@ import {BigNumberish} from "ethers";
 import {MAX_UINT_128} from "./util";
 import {bytecode} from "../../artifacts/contracts/Grid.sol/Grid.json";
 import {isHexPrefixed} from "hardhat/internal/hardhat-network/provider/utils/isHexPrefixed";
+import {sha256} from "ethers/lib/utils";
 
 const WETH9 = require("../contracts/WETH9.json");
 
