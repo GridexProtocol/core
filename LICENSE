@@ -14,9 +14,11 @@ Licensor:             Gridex
 Licensed Work:        Core
                       The Licensed Work is (c) 2023 Gridex
 
-Additional Use Grant:
+Additional Use Grant: Any uses listed and defined at
+                      core-license-grants.gridex.eth
 
-Change Date:          2026-03-01
+Change Date:          The earlier of 2026-03-01 or a date specified at
+                      core-license-date.gridex.eth
 
 Change License:       GNU General Public License v2.0 or later
 
