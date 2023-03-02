@@ -44,9 +44,16 @@ const config: HardhatUserConfig = {
             url: `https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_MAINNET_KEY}`,
             accounts: [`${process.env.PRIVATE_KEY}`],
         },
+        arbitrum: {
+            url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_ARBITRUM_KEY}`,
+            accounts: [`${process.env.PRIVATE_KEY}`],
+        },
     },
     etherscan: {
-        apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+        apiKey: {
+            mainnet: `${process.env.ETHERSCAN_API_KEY}`,
+            arbitrumOne: `${process.env.ARBISCAN_API_KEY}`
+        },
     },
     gasReporter: {},
     contractSizer: {
