@@ -1,4 +1,4 @@
-The Gridex Protocol already deployed in Arbitrum, below is the contract addresses:
+The Gridex Protocol has already deployed on Arbitrum, and here are the contract addresses:
 
 | Contract                                 | Arbitrum                                     |
 |------------------------------------------|----------------------------------------------|

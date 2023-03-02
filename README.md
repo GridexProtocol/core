@@ -25,7 +25,7 @@ However, some files are licensed under the `GPL-2.0-or-later` license:
 
 ## Contract Deployments
 
-The Gridex Protocol has been deployed in Arbitrum, see [DEPLOYMENT](DEPLOYMENT.md) for more details.
+The Gridex Protocol has already deployed on Arbitrum, see [DEPLOYMENT](DEPLOYMENT.md) for more details.
 
 ## Contributing
 
