@@ -23,6 +23,10 @@ However, some files are licensed under the `GPL-2.0-or-later` license:
 - All files in the [contracts/test](contracts/test) directory are remain unlicensed(as indicated in
   their SPDX headers).
 
+## Contract Deployments
+
+The Gridex Protocol has been deployed in Arbitrum, see [DEPLOYMENT](DEPLOYMENT.md) for more details.
+
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process
